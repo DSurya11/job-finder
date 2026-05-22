@@ -161,6 +161,16 @@ def _s(d: dict, *keys: str, default: str = "") -> str:
     return default
 
 
+def _find_url(d: dict) -> str:
+    """Fallback: scan all fields and return the first value that starts with http
+    and whose key name suggests it is a URL or link."""
+    for k, v in d.items():
+        if v and isinstance(v, str) and v.startswith("http"):
+            if any(h in k.lower() for h in ("url", "link", "apply", "href")):
+                return v.strip()
+    return ""
+
+
 def _title_from_post_text(text: str) -> str:
     for line in text.split("\n"):
         line = line.strip()
@@ -178,7 +188,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "company", "companyName"),
         "location": _s(x, "location", "jobLocation"),
         "salary": _s(x, "salary", "salaryInfo"),
-        "url": _s(x, "applyUrl", "url", "jobUrl", "link"),  # applyUrl = direct apply link
+        "url": _s(x, "applyUrl", "url", "jobUrl", "link") or _find_url(x),
         "description": _s(x, "description", "jobDescription")[:700],
         "source": "LinkedIn Jobs",
         "posted": _s(x, "postedAt", "publishedAt", "date"),
@@ -188,7 +198,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "authorName", "authorCompany", "company"),
         "location": _s(x, "location"),
         "salary": "",
-        "url": _s(x, "postUrl", "url", "link"),
+        "url": _s(x, "postUrl", "url", "link") or _find_url(x),
         "description": _s(x, "text", "content", "postText")[:700],
         "source": "LinkedIn Post",
         "posted": _s(x, "postedAt", "timestamp", "date"),
@@ -198,7 +208,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "company", "companyName"),
         "location": _s(x, "location", "jobLocation"),
         "salary": _s(x, "salary", "salaryText"),
-        "url": _s(x, "url", "jobUrl", "externalApplyLink"),
+        "url": _s(x, "url", "jobUrl", "externalApplyLink") or _find_url(x),
         "description": _s(x, "description", "snippet")[:700],
         "source": "Indeed",
         "posted": _s(x, "date", "postedAt"),
@@ -208,7 +218,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "employerName", "company"),
         "location": _s(x, "location", "jobLocation"),
         "salary": _s(x, "payPeriod", "salary", "salaryEstimate"),
-        "url": _s(x, "jobViewUrl", "url", "link"),
+        "url": _s(x, "jobViewUrl", "url", "link") or _find_url(x),
         "description": _s(x, "jobDescription", "description")[:700],
         "source": "Glassdoor",
         "posted": _s(x, "listingDate", "postedAt", "date"),
@@ -218,7 +228,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "companyName", "company"),
         "location": _s(x, "location", "jobLocation"),
         "salary": _s(x, "salary", "salaryDetail"),
-        "url": _s(x, "jdURL", "url", "link"),
+        "url": _s(x, "jdURL", "jdUrl", "url", "link") or _find_url(x),  # jdUrl/jdURL both tried
         "description": _s(x, "jobDescription", "description")[:700],
         "source": "Naukri",
         "posted": _s(x, "freshness", "postedAt", "date"),
@@ -228,7 +238,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "company", "companyName", "organizationName"),
         "location": _s(x, "location", "city", "jobLocation") or "India",
         "salary": _s(x, "stipend", "salary", "stipendAmount", "monthlyStipend"),
-        "url": _s(x, "url", "link", "applyLink", "apply_link", "internshipUrl"),  # apply_link common field
+        "url": _s(x, "url", "link", "applyLink", "apply_link", "internshipUrl") or _find_url(x),
         "description": _s(x, "description", "about", "jobDescription", "details")[:700],
         "source": "Internshala",
         "posted": _s(x, "postedOn", "postedAt", "startDate", "date"),
@@ -238,7 +248,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "company", "companyName", "startupName", "organizationName"),
         "location": _s(x, "location", "jobLocation", "remote"),
         "salary": _s(x, "compensation", "salary", "equity", "salaryRange"),
-        "url": _s(x, "url", "jobUrl", "link", "applyUrl"),
+        "url": _s(x, "url", "jobUrl", "link", "applyUrl") or _find_url(x),
         "description": _s(x, "description", "jobDescription", "about")[:700],
         "source": "Wellfound",
         "posted": _s(x, "postedAt", "createdAt", "date"),
