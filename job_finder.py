@@ -422,6 +422,20 @@ Do NOT summarise or skip listings — capture as many as the page shows.
   • https://wellfound.com/jobs?query=machine+learning+intern&locationSlugs%5B%5D=in-india
   • https://wellfound.com/jobs?query=software+engineer+intern&locationSlugs%5B%5D=in-india
 
+### Glassdoor India  (we skipped scraping this — search it now)
+  • https://www.glassdoor.co.in/Job/india-python-intern-jobs-SRCH_IL.0,5_IN115_KO6,19.htm
+  • https://www.glassdoor.co.in/Job/india-software-engineer-intern-jobs-SRCH_IL.0,5_IN115_KO6,31.htm
+  • https://www.glassdoor.co.in/Job/india-machine-learning-intern-jobs-SRCH_IL.0,5_IN115_KO6,30.htm
+
+### Indeed India  (backup — we had API issues scraping this)
+  • https://in.indeed.com/jobs?q=python+backend+intern&l=India&fromage=7
+  • https://in.indeed.com/jobs?q=software+engineer+intern&l=India&fromage=7
+  • https://in.indeed.com/jobs?q=machine+learning+intern&l=India&fromage=7
+
+### Unstop  (India hackathons + fresher jobs + internships)
+  • https://unstop.com/internships?opportunity=Internships&domain=Technology
+  • https://unstop.com/jobs?opportunity=Jobs&domain=Technology&location=India
+
 {'='*64}
 MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
 {'='*64}
