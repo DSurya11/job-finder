@@ -327,66 +327,177 @@ def export_to_excel(jobs: list, path: str) -> None:
 # Claude AI prompt builder
 # ---------------------------------------------------------------------------
 def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
-    p = profile.get("personal", {})
-    edu = profile.get("education", {})
-    prefs = profile.get("job_preferences", {})
-    skills = profile.get("skills", {})
+    p        = profile.get("personal", {})
+    edu      = profile.get("education", {})
+    prefs    = profile.get("job_preferences", {})
+    skills   = profile.get("skills", {})
     projects = profile.get("projects", [])
+    keywords = profile.get("search", {}).get("keywords", [])
+    i_cats   = profile.get("search", {}).get(
+        "internshala_categories", ["Software Development", "Machine Learning"]
+    )
+
     all_skills = (
         skills.get("primary", [])
         + skills.get("secondary", [])
         + skills.get("ml_ai", [])
     )
     project_lines = "\n".join(
-        f"  - {proj['name']}: {proj.get('tech', '')} — {proj.get('description', '')}"
+        f"  • {proj['name']}: {proj.get('tech', '')} — {proj.get('description', '')}"
         for proj in projects
     )
     resume_snippet = (
-        resume_text[:2500] if resume_text else "(resume not loaded — please attach the PDF)"
+        resume_text[:2500] if resume_text
+        else "(resume not loaded — please attach the PDF)"
     )
 
-    return f"""I have attached an Excel file containing {job_count} job listings scraped from \
-LinkedIn Jobs, LinkedIn Posts, Indeed India, and Glassdoor — all pre-filtered for India. \
-Help me find the best internship matches.
+    # Build live search URLs Claude should visit
+    internshala_urls = "\n".join(
+        "  • https://internshala.com/internships/"
+        + cat.lower().replace(" / ", "-").replace("/", "-").replace(" ", "-")
+        + "-internship/"
+        for cat in i_cats[:4]
+    )
+    internshala_urls += (
+        "\n  • https://internshala.com/internships/internship-in-india/"
+        "\n  • https://internshala.com/internships/work-from-home-internship/"
+    )
 
-## My Profile
-Name: {p.get("name", "")}
-Education: {edu.get("degree", "")} at {edu.get("institution", "")} | {edu.get("year", "")} | GPA: {edu.get("gpa", "")}
-Current location: {p.get("location", "")}
-Target locations: {", ".join(prefs.get("preferred_locations", ["India"]))}
-Job type: {prefs.get("type", "internship")} — Paid only: {prefs.get("paid_only", True)}
-Target roles: {", ".join(prefs.get("roles", []))}
-Skills: {", ".join(all_skills)}
+    naukri_urls = "\n".join(
+        "  • https://www.naukri.com/"
+        + kw.lower().replace(" ", "-")
+        + "-jobs?experience=0&jobAge=7"
+        for kw in keywords[:3]
+    )
+    naukri_urls += "\n  • https://www.naukri.com/internship-jobs-in-india?experience=0"
 
-## Projects
+    linkedin_urls = "\n".join(
+        "  • https://www.linkedin.com/jobs/search/?keywords="
+        + quote_plus(kw)
+        + "&location=India&f_E=1&f_JT=I&sortBy=DD"
+        for kw in keywords[:3]
+    )
+
+    roles_str     = ", ".join(prefs.get("roles", []))
+    locations_str = ", ".join(prefs.get("preferred_locations", ["India"]))
+    skills_str    = ", ".join(all_skills)
+    name          = p.get("name", "")
+    degree        = edu.get("degree", "")
+    institution   = edu.get("institution", "")
+    year          = edu.get("year", "")
+    gpa           = edu.get("gpa", "")
+    location      = p.get("location", "")
+    job_type      = prefs.get("type", "internship")
+
+    return f"""You have two files attached:
+  1. **jobs.xlsx** — {job_count} internship listings scraped from LinkedIn, Naukri, and Internshala (India, pre-filtered)
+  2. **Resume PDF** — my full CV
+
+Complete BOTH parts below before writing ANY output. Do not skip Part 2.
+
+{'='*64}
+PART 1 — SCORE EVERY ROW IN THE EXCEL FILE
+{'='*64}
+Read each row silently. Score it 0–10 using the rubric further below.
+Keep all scores in working memory — you will merge them with Part 2 results.
+
+{'='*64}
+PART 2 — SEARCH THE WEB RIGHT NOW FOR ADDITIONAL LIVE JOBS
+{'='*64}
+Use your web search / browsing tool to visit each URL below.
+From each page extract every visible job listing: Title, Company, Location, Stipend, and the direct apply URL.
+Do NOT summarise or skip listings — capture as many as the page shows.
+
+### Internshala  (highest priority — India internships)
+{internshala_urls}
+
+### Naukri  (India's largest job board)
+{naukri_urls}
+
+### LinkedIn Jobs  (filter: Internship, Entry level, past week)
+{linkedin_urls}
+
+### Wellfound / AngelList  (startups)
+  • https://wellfound.com/jobs?query=python+backend+intern&locationSlugs%5B%5D=in-india
+  • https://wellfound.com/jobs?query=machine+learning+intern&locationSlugs%5B%5D=in-india
+  • https://wellfound.com/jobs?query=software+engineer+intern&locationSlugs%5B%5D=in-india
+
+{'='*64}
+MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
+{'='*64}
+Name            : {name}
+Education       : {degree} at {institution} | Year {year} | GPA {gpa}
+Current city    : {location}
+Open to         : {locations_str}
+Looking for     : {job_type} — PAID only (stipend must be stated or company must be top-tier)
+Target roles    : {roles_str}
+
+Skills          : {skills_str}
+
+Projects:
 {project_lines}
 
-## Resume Text
+Resume (first 2500 chars — full PDF attached):
 {resume_snippet}
 
-## Your Task
-1. **Filter out**:
-   - Non-India locations
-   - Unpaid / stipend-unknown roles (unless company is top-tier and experience value is very high)
-   - Non-tech roles, product pages, spam
-   - Roles explicitly requiring 3+ years of experience
-   - Duplicate URLs
+{'='*64}
+SCORING RUBRIC  (0–10)
+{'='*64}
+10  Python / FastAPI / Django backend intern · India · paid · stipend stated · strong skill overlap
+ 9  ML / AI / Data Science intern · India · paid · stipend stated
+ 8  Full-stack (React + Python/Node) intern · India · paid
+ 7  Cloud / DevOps / general SWE intern · India · paid
+ 6  Adjacent tech role (mobile, QA automation) · India · paid
+ 4  Requires 2–3 yrs experience  OR  unpaid but top-tier company (Google, Microsoft, unicorn)
+ 2  Stipend unknown, company unrecognised
+ 0  Non-India · non-tech · requires 3+ yrs · spam / internship farm  →  DROP immediately
 
-2. **Score** each surviving job 0–10 on how well it matches my actual skill stack \
-(use the Description column — do not rely on the Excel score column).
+{'='*64}
+HARD FILTERS — silently drop any job that matches these
+{'='*64}
+✗  Location outside India (except explicitly "Remote — open to India")
+✗  Requires 3 or more years of experience
+✗  Unpaid AND company is not widely recognised
+✗  Non-tech role (marketing, HR, sales, operations, content writing)
+✗  Duplicate URLs (keep only the first occurrence)
+✗  Spam / "earn from home" / multi-level / vague "work on exciting projects"
 
-3. **Group into tiers**:
-   - **Tier 1 – Apply Today**: Python / FastAPI backend intern, India, paid, stipend stated
-   - **Tier 2 – Strong Match**: AI/ML, full-stack (React + Python), or Node.js intern, India, paid
-   - **Tier 3 – Bulk Apply**: Decent fit, quick turnaround, still legitimate
+{'='*64}
+FINAL OUTPUT — ONE UNIFIED RANKED LIST  (Excel jobs + web-found jobs merged)
+{'='*64}
+Deduplicate across both sources. Sort by score descending within each tier.
+Show a source tag [Excel] or [Web] on each card.
 
-4. **Per job card show**: Title · Company · Location · Stipend · Score/10 · Why it fits · Direct URL
+---
 
-5. End with a summary line: `X rows → Y after filters → Z picks shown`
+### 🔥 Tier 1 — Apply Today  (score 8–10)
+Best-fit: Python/FastAPI backend · ML/AI · full-stack — India — paid — stipend stated
 
-**Preferences**: Remote or Hyderabad strongly preferred. \
-Only 100% legitimate postings — no fake internship farms. \
-For LinkedIn Posts, include only if a direct application URL is visible in the Description column.
+> **[Job Title]** · [Company] · [City / Remote]
+> Stipend: ₹X/month · Score: X/10 · Source: [Excel|Web]
+> Why it fits: [one sentence referencing my actual skills / projects]
+> 🔗 [Direct apply URL — must be the job application page, not homepage]
+
+### ✅ Tier 2 — Strong Match  (score 6–7)
+Good fit: cloud, SWE, adjacent tech — India — paid
+
+(same card format)
+
+### 📋 Tier 3 — Bulk Apply  (score 4–5)
+Decent fit, legitimate company, low effort to apply
+
+(same card format)
+
+---
+
+End with exactly this summary line:
+`Excel: {job_count} scraped | Web-found: W new | After filters: X total | Tier 1: A | Tier 2: B | Tier 3: C`
+
+**Important rules for the output**:
+- Every URL must be a direct job/application link — never a homepage or search result page
+- If a LinkedIn Post listing has no direct apply URL in the description, drop it
+- Prefer Remote or Hyderabad roles when scores are tied
+- Zero tolerance for fake internship farms or unverified "apply via WhatsApp" listings
 """
 
 
