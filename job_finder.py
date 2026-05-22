@@ -539,6 +539,14 @@ End with exactly this summary line:
 - If a LinkedIn Post listing has no direct apply URL visible in the description, drop it
 - Prefer Remote or Hyderabad roles when scores are tied
 - Zero tolerance for fake internship farms or unverified "apply via WhatsApp" listings
+
+**CRITICAL — Web-found URLs must be 100% verified. NO hallucination allowed:**
+- For ANY web-found listing, you must have directly browsed to that exact URL and seen the live job page
+- NEVER construct or guess a URL by inserting a job ID or slug you inferred (e.g. wellfound.com/jobs/XXXXXX-title)
+- NEVER reuse a URL pattern from one listing and substitute different IDs or titles
+- If you are not 100% certain a URL exists and is live, omit the entire web-found listing — do NOT include it
+- It is far better to show 5 verified web-found listings than 15 where half return 404
+- For Wellfound specifically: job IDs expire within days — only include if you clicked through to a live page
 """
 
 
