@@ -112,7 +112,13 @@ search:
     - "software engineer intern India"
     - "machine learning intern India"
     - "full stack developer intern India"
-  max_results_per_actor: 50
+  max_results_per_actor: 30   # keep low to stay within $5 free tier
+
+  # Internshala is category-based (not keyword). These map to its job_category field.
+  internshala_categories:
+    - "Software Development"
+    - "Machine Learning"
+    - "Web Development / Designing"
 
 # -----------------------------------------------------------------------------
 # Apify actor configuration
@@ -125,10 +131,10 @@ apify_actors:
   linkedin_jobs:
     enabled: true
     # Confirmed actor: https://console.apify.com/actors/hKByXkMQaC5Qt9UMN
-    # Input: startUrls is injected by job_finder.py from your search keywords
+    # $1.00/1K results — 2 keywords × 25 = ~$0.05
     actor_id: "curious_coder/linkedin-jobs-scraper"
     input_template:
-      count: 100           # "Number of jobs needed" field in actor UI
+      count: 25            # "Number of jobs needed" field in actor UI
       scrapeCompany: true
 
   linkedin_posts:
@@ -141,11 +147,12 @@ apify_actors:
   indeed:
     enabled: true
     # Confirmed actor: https://console.apify.com/actors/hMvNSpz3InHgI5jlch
+    # ⚠️ $6.00/1K — most expensive actor. 2 keywords × 20 = ~$0.24
     actor_id: "misceres/indeed-scraper"
     input_template:
       country: "India"     # full country name, not code
       location: "India"
-      maxItems: 100
+      maxItems: 20
       saveOnlyUniqueItems: true
 
   naukri:
@@ -154,20 +161,19 @@ apify_actors:
     actor_id: "automation-lab/naukri-scraper"
     input_template:
       location: "India"
-      maxResults: 100
+      maxResults: 30
 
   internshala:
     enabled: true
     # bareezh_codes/internshala-scrapper — 478 users, most popular Internshala actor
-    # Note: this actor uses category + location filters, not free-text keyword
-    # Open https://console.apify.com/actors/bareezh_codes~internshala-scrapper/input
-    # and verify the exact JSON field names before running
+    # job_category is injected per-run from search.internshala_categories above
     actor_id: "bareezh_codes/internshala-scrapper"
     input_template:
-      location: "India"
-      workFromHome: false
-      stipend: true
-      maxResults: 100
+      location: ""          # empty = all India
+      max_results: 30
+      pages_to_scrape: 5
+      part_time: false
+      work_from_home: true  # include remote/WFH internships
 
   wellfound:
     enabled: true
@@ -175,7 +181,7 @@ apify_actors:
     actor_id: "radeance/wellfound-job-listings-scraper"
     input_template:
       location: "India"
-      maxResults: 50
+      maxResults: 25
 
   glassdoor:
     enabled: true
@@ -183,4 +189,4 @@ apify_actors:
     actor_id: "crawlerbros/glassdoor-jobs-scraper"
     input_template:
       location: "India"
-      maxResults: 50
+      maxResults: 25

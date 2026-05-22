@@ -416,7 +416,8 @@ async def collect_jobs(
         tasks.append((source_key, actor_id, merged))
 
     # LinkedIn Jobs — actor takes search page URLs, not a bare keyword
-    for kw in keywords[:3]:
+    # 2 keywords to control cost ($1/1K results)
+    for kw in keywords[:2]:
         li_url = (
             "https://www.linkedin.com/jobs/search/"
             f"?keywords={quote_plus(kw)}&location=India&position=1&pageNum=0"
@@ -425,19 +426,23 @@ async def collect_jobs(
 
     # LinkedIn Posts — hiring posts mentioning the role
     for kw in keywords[:2]:
-        queue("linkedin_posts", {"searchTerms": [f"hiring {kw} India"], "maxResults": 30})
+        queue("linkedin_posts", {"searchTerms": [f"hiring {kw} India"], "maxResults": 20})
 
-    # Indeed India
-    for kw in keywords[:3]:
+    # Indeed India — most expensive actor ($6/1K), use minimal keywords
+    for kw in keywords[:2]:
         queue("indeed", {"position": kw})
 
     # Naukri — biggest India job board
-    for kw in keywords[:3]:
+    for kw in keywords[:2]:
         queue("naukri", {"position": kw})
 
-    # Internshala — best source for India internships
-    for kw in keywords[:3]:
-        queue("internshala", {"keyword": kw})
+    # Internshala — category-based (not keyword), uses internshala_categories from profile
+    internshala_cats = (
+        profile.get("search", {})
+        .get("internshala_categories", ["Software Development"])
+    )
+    for cat in internshala_cats[:3]:
+        queue("internshala", {"job_category": cat})
 
     # Wellfound (AngelList) — startups
     for kw in keywords[:2]:
