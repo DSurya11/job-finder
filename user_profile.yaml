@@ -134,7 +134,7 @@ apify_actors:
   linkedin_posts:
     enabled: true
     # Search Apify Store for: https://console.apify.com/store?search=linkedin+post
-    actor_id: "curious_coder/linkedin-post-scraper"
+    actor_id: "curious_coder/linkedin-post-search-scraper"
     input_template:
       maxResults: 30
 
@@ -150,31 +150,37 @@ apify_actors:
 
   naukri:
     enabled: true
-    # Search: https://console.apify.com/store?search=naukri — verify actor ID before running
-    actor_id: "bebity/naukri-scraper"
+    # automation-lab/naukri-scraper — 1.6K users, most widely used
+    actor_id: "automation-lab/naukri-scraper"
     input_template:
       location: "India"
       maxResults: 100
 
   internshala:
     enabled: true
-    # Search: https://console.apify.com/store?search=internshala — verify actor ID before running
-    actor_id: "bebity/internshala-scraper"
+    # bareezh_codes/internshala-scrapper — 478 users, most popular Internshala actor
+    # Note: this actor uses category + location filters, not free-text keyword
+    # Open https://console.apify.com/actors/bareezh_codes~internshala-scrapper/input
+    # and verify the exact JSON field names before running
+    actor_id: "bareezh_codes/internshala-scrapper"
     input_template:
       location: "India"
+      workFromHome: false
+      stipend: true
       maxResults: 100
 
   wellfound:
     enabled: true
-    # Search: https://console.apify.com/store?search=wellfound — verify actor ID before running
-    actor_id: "bebity/wellfound-scraper"
+    # radeance/wellfound-job-listings-scraper — 1.1K users, 4.9 rating (6 reviews)
+    actor_id: "radeance/wellfound-job-listings-scraper"
     input_template:
       location: "India"
       maxResults: 50
 
   glassdoor:
     enabled: true
-    actor_id: "bebity/glassdoor-jobs-scraper"
+    # crawlerbros/glassdoor-jobs-scraper — 5.0 rating (33 reviews), replacing bebity's 2.0-rated actor
+    actor_id: "crawlerbros/glassdoor-jobs-scraper"
     input_template:
       location: "India"
       maxResults: 50
