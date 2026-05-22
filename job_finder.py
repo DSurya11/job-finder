@@ -556,8 +556,8 @@ async def collect_jobs(
     for kw in keywords[:2]:
         queue("linkedin_posts", {"query": f"hiring {kw} India"})
 
-    # Indeed India — most expensive actor ($6/1K), use minimal keywords
-    for kw in keywords[:2]:
+    # Indeed India — most expensive actor ($6/1K); 1 run only to avoid 402 on free tier
+    for kw in keywords[:1]:
         queue("indeed", {"position": kw})
 
     # Naukri — field is "keyword" (not "position", confirmed from actor JSON schema)
