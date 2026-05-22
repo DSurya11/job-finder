@@ -131,37 +131,45 @@ apify_actors:
   linkedin_jobs:
     enabled: true
     # Confirmed actor: https://console.apify.com/actors/hKByXkMQaC5Qt9UMN
-    # $1.00/1K results — 2 keywords × 25 = ~$0.05
+    # $1.00/1K — "urls" field (plain URL strings) injected by job_finder.py
     actor_id: "curious_coder/linkedin-jobs-scraper"
     input_template:
-      count: 25            # "Number of jobs needed" field in actor UI
+      count: 25
       scrapeCompany: true
+      splitByLocation: false
 
   linkedin_posts:
     enabled: true
-    # Search Apify Store for: https://console.apify.com/store?search=linkedin+post
+    # "urls" field takes LinkedIn search page URLs — injected by job_finder.py
     actor_id: "curious_coder/linkedin-post-search-scraper"
     input_template:
-      maxResults: 30
+      deepScrape: false    # true costs more compute; false is enough for hiring posts
+      maxDelay: 4
+      minDelay: 2
+      rawData: false
 
   indeed:
     enabled: true
     # Confirmed actor: https://console.apify.com/actors/hMvNSpz3InHgI5jlch
-    # ⚠️ $6.00/1K — most expensive actor. 2 keywords × 20 = ~$0.24
+    # ⚠️ $6.00/1K — most expensive. 2 keywords × 20 = ~$0.24
     actor_id: "misceres/indeed-scraper"
     input_template:
-      country: "India"     # full country name, not code
+      country: "India"
       location: "India"
-      maxItems: 20
+      maxItemsPerSearch: 20    # correct field name (schema: maxItemsPerSearch, not maxItems)
+      followApplyRedirects: false
+      parseCompanyDetails: false
       saveOnlyUniqueItems: true
 
   naukri:
     enabled: true
     # automation-lab/naukri-scraper — 1.6K users, most widely used
+    # "keyword" injected per-run by job_finder.py
     actor_id: "automation-lab/naukri-scraper"
     input_template:
       location: "India"
-      maxResults: 30
+      maxJobs: 30              # correct field name (not maxResults)
+      experienceMin: 0         # 0 = fresher/intern roles only
 
   internshala:
     enabled: true
@@ -177,16 +185,23 @@ apify_actors:
 
   wellfound:
     enabled: true
-    # radeance/wellfound-job-listings-scraper — 1.1K users, 4.9 rating (6 reviews)
+    # radeance/wellfound-job-listings-scraper — 1.1K users, 4.9 rating
+    # No keyword/location field in schema — job_finder.py passes a Wellfound search URL
     actor_id: "radeance/wellfound-job-listings-scraper"
     input_template:
-      location: "India"
-      maxResults: 25
+      include_company_profile: true
+      include_job_page: true
+      include_no_experience: true  # include fresher-friendly roles
+      include_no_salary: true
+      only_unique_jobs: true
+      stream_output: true
+      monitoring_mode: false
+      us_date_format: false
 
   glassdoor:
     enabled: true
-    # crawlerbros/glassdoor-jobs-scraper — 5.0 rating (33 reviews), replacing bebity's 2.0-rated actor
+    # crawlerbros/glassdoor-jobs-scraper — 5.0 rating (33 reviews)
     actor_id: "crawlerbros/glassdoor-jobs-scraper"
     input_template:
       location: "India"
-      maxResults: 25
+      maxItems: 25             # correct field name (not maxResults)

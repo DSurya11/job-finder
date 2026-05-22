@@ -415,26 +415,30 @@ async def collect_jobs(
         merged = {**cfg.get("input_template", {}), **extra_payload}
         tasks.append((source_key, actor_id, merged))
 
-    # LinkedIn Jobs — actor takes search page URLs, not a bare keyword
-    # 2 keywords to control cost ($1/1K results)
+    # LinkedIn Jobs — "urls" field takes plain URL strings (confirmed from actor JSON schema)
     for kw in keywords[:2]:
         li_url = (
             "https://www.linkedin.com/jobs/search/"
             f"?keywords={quote_plus(kw)}&location=India&position=1&pageNum=0"
         )
-        queue("linkedin_jobs", {"startUrls": [{"url": li_url}]})
+        queue("linkedin_jobs", {"urls": [li_url]})
 
-    # LinkedIn Posts — hiring posts mentioning the role
+    # LinkedIn Posts — "urls" field takes LinkedIn search page URLs (confirmed from actor JSON schema)
     for kw in keywords[:2]:
-        queue("linkedin_posts", {"searchTerms": [f"hiring {kw} India"], "maxResults": 20})
+        post_url = (
+            "https://www.linkedin.com/search/results/content/"
+            f"?datePosted=%22past-week%22&keywords={quote_plus('hiring ' + kw)}"
+            "&origin=FACETED_SEARCH"
+        )
+        queue("linkedin_posts", {"urls": [post_url]})
 
     # Indeed India — most expensive actor ($6/1K), use minimal keywords
     for kw in keywords[:2]:
         queue("indeed", {"position": kw})
 
-    # Naukri — biggest India job board
+    # Naukri — field is "keyword" (not "position", confirmed from actor JSON schema)
     for kw in keywords[:2]:
-        queue("naukri", {"position": kw})
+        queue("naukri", {"keyword": kw})
 
     # Internshala — category-based (not keyword), uses internshala_categories from profile
     internshala_cats = (
@@ -444,9 +448,13 @@ async def collect_jobs(
     for cat in internshala_cats[:3]:
         queue("internshala", {"job_category": cat})
 
-    # Wellfound (AngelList) — startups
+    # Wellfound — no keyword/location field in schema; pass Wellfound search page URL
     for kw in keywords[:2]:
-        queue("wellfound", {"searchQuery": kw, "location": "India"})
+        wf_url = (
+            f"https://wellfound.com/jobs?query={quote_plus(kw)}"
+            "&locationSlugs%5B%5D=in-india"
+        )
+        queue("wellfound", {"startUrls": [{"url": wf_url}]})
 
     # Glassdoor
     for kw in keywords[:2]:
