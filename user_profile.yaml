@@ -182,9 +182,9 @@ apify_actors:
       work_from_home: true  # include remote/WFH internships
 
   wellfound:
-    enabled: true
-    # crawlerbros/wellfound-scraper — free, no login, 5.0 rating (22 reviews)
-    # "keyword" injected per-run by job_finder.py
+    enabled: false
+    # Disabled: crawlerbros actor returns 0 items (doesn't accept keyword input)
+    # Claude searches wellfound.com directly via web search in the prompt instead
     actor_id: "crawlerbros/wellfound-scraper"
     input_template:
       location: "India"

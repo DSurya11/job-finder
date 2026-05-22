@@ -475,6 +475,7 @@ HARD FILTERS — silently drop any job that matches these
 ✗  Non-tech role (marketing, HR, sales, operations, content writing)
 ✗  Duplicate URLs (keep only the first occurrence)
 ✗  Spam / "earn from home" / multi-level / vague "work on exciting projects"
+✗  No direct apply URL found anywhere (Excel URL column empty AND not findable via web search) → drop
 
 {'='*64}
 FINAL OUTPUT — ONE UNIFIED RANKED LIST  (Excel jobs + web-found jobs merged)
@@ -490,7 +491,7 @@ Best-fit: Python/FastAPI backend · ML/AI · full-stack — India — paid — s
 > **[Job Title]** · [Company] · [City / Remote]
 > Stipend: ₹X/month · Score: X/10 · Source: [Excel|Web]
 > Why it fits: [one sentence referencing my actual skills / projects]
-> 🔗 [Direct apply URL — must be the job application page, not homepage]
+> 🔗 Apply: <full direct URL here>  ← THIS LINE IS MANDATORY. If no URL exists, skip the job entirely.
 
 ### ✅ Tier 2 — Strong Match  (score 6–7)
 Good fit: cloud, SWE, adjacent tech — India — paid
@@ -508,8 +509,10 @@ End with exactly this summary line:
 `Excel: {job_count} scraped | Web-found: W new | After filters: X total | Tier 1: A | Tier 2: B | Tier 3: C`
 
 **Important rules for the output**:
-- Every URL must be a direct job/application link — never a homepage or search result page
-- If a LinkedIn Post listing has no direct apply URL in the description, drop it
+- **Every job card MUST have a working direct apply URL on the 🔗 Apply line — no exceptions**
+- If the Excel URL column is empty and you cannot find the apply link via web search, drop the job
+- Never use a company homepage, LinkedIn company page, or search results page as the URL
+- If a LinkedIn Post listing has no direct apply URL visible in the description, drop it
 - Prefer Remote or Hyderabad roles when scores are tied
 - Zero tolerance for fake internship farms or unverified "apply via WhatsApp" listings
 """
