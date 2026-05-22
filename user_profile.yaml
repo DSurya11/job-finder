@@ -169,6 +169,7 @@ apify_actors:
       location: "India"
       maxJobs: 30              # correct field name (not maxResults)
       experienceMin: 0         # 0 = fresher/intern roles only
+      jobAge: 30               # only jobs posted within last 30 days
 
   internshala:
     enabled: true

@@ -17,7 +17,9 @@ Usage:
 import argparse
 import asyncio
 import os
+import re
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -272,6 +274,47 @@ def is_india_job(job: dict) -> bool:
     if not loc:
         return any(kw in desc for kw in INDIA_LOCS)
     return False
+
+
+# ---------------------------------------------------------------------------
+# Freshness filter — drop jobs posted more than MAX_JOB_AGE_DAYS ago
+# ---------------------------------------------------------------------------
+MAX_JOB_AGE_DAYS = 45
+
+_DATE_FMTS = ("%Y-%m-%d", "%d %b %Y", "%b %d, %Y", "%d/%m/%Y", "%Y/%m/%d")
+
+
+def is_recent_job(job: dict, max_days: int = MAX_JOB_AGE_DAYS) -> bool:
+    """Return True if the job appears recent, or if we cannot determine its age."""
+    raw = (job.get("posted") or "").lower().strip()
+    if not raw:
+        return True  # no date info — keep
+    # Clearly fresh signals
+    if any(w in raw for w in ("just", "today", "fresh", "hour", "minute", "second")):
+        return True
+    # "X days ago"
+    m = re.search(r"(\d+)\s*day", raw)
+    if m:
+        return int(m.group(1)) <= max_days
+    # "X weeks ago"
+    m = re.search(r"(\d+)\s*week", raw)
+    if m:
+        return int(m.group(1)) * 7 <= max_days
+    # "X months ago" — 1 month is borderline, 2+ months → drop
+    m = re.search(r"(\d+)\s*month", raw)
+    if m:
+        return int(m.group(1)) * 30 <= max_days
+    # Any mention of "year" → definitely stale
+    if "year" in raw:
+        return False
+    # Try absolute date formats
+    for fmt in _DATE_FMTS:
+        try:
+            dt = datetime.strptime(raw, fmt)
+            return (datetime.now() - dt).days <= max_days
+        except ValueError:
+            pass
+    return True  # unrecognised format — keep to avoid false drops
 
 
 _LI_POST_JOB_HINTS = (
@@ -680,6 +723,9 @@ async def main() -> None:
 
     filtered = [j for j in india_jobs if passes_role_filter(j, profile)]
     print(f"After role filter: {len(filtered)}")
+
+    filtered = [j for j in filtered if is_recent_job(j)]
+    print(f"After date filter : {len(filtered)} (dropped jobs older than {MAX_JOB_AGE_DAYS} days)")
 
     seen: set[str] = set()
     unique: list[dict] = []
