@@ -424,14 +424,9 @@ async def collect_jobs(
         )
         queue("linkedin_jobs", {"urls": [li_url]})
 
-    # LinkedIn Posts — "urls" field takes LinkedIn search page URLs (confirmed from actor JSON schema)
+    # LinkedIn Posts — apimaestro actor takes a "query" keyword (free, no cookies)
     for kw in keywords[:2]:
-        post_url = (
-            "https://www.linkedin.com/search/results/content/"
-            f"?datePosted=%22past-week%22&keywords={quote_plus('hiring ' + kw)}"
-            "&origin=FACETED_SEARCH"
-        )
-        queue("linkedin_posts", {"urls": [post_url]})
+        queue("linkedin_posts", {"query": f"hiring {kw} India"})
 
     # Indeed India — most expensive actor ($6/1K), use minimal keywords
     for kw in keywords[:2]:
@@ -449,13 +444,9 @@ async def collect_jobs(
     for cat in internshala_cats[:3]:
         queue("internshala", {"job_category": cat})
 
-    # Wellfound — no keyword/location field in schema; pass Wellfound search page URL
+    # Wellfound — crawlerbros actor takes keyword + location
     for kw in keywords[:2]:
-        wf_url = (
-            f"https://wellfound.com/jobs?query={quote_plus(kw)}"
-            "&locationSlugs%5B%5D=in-india"
-        )
-        queue("wellfound", {"startUrls": [{"url": wf_url}]})
+        queue("wellfound", {"keyword": kw})
 
     # Glassdoor
     for kw in keywords[:2]:

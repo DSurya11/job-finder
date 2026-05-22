@@ -140,13 +140,11 @@ apify_actors:
 
   linkedin_posts:
     enabled: true
-    # "urls" field takes LinkedIn search page URLs — injected by job_finder.py
-    actor_id: "curious_coder/linkedin-post-search-scraper"
+    # Free actor, no cookies/login needed — 8.9K uses, 4.6 rating
+    # Input: "query" injected by job_finder.py
+    actor_id: "apimaestro/linkedin-posts-search-scraper-no-cookies"
     input_template:
-      deepScrape: false    # true costs more compute; false is enough for hiring posts
-      maxDelay: 4
-      minDelay: 2
-      rawData: false
+      count: 20
 
   indeed:
     enabled: true
@@ -154,9 +152,9 @@ apify_actors:
     # ⚠️ $6.00/1K — most expensive. 2 keywords × 20 = ~$0.24
     actor_id: "misceres/indeed-scraper"
     input_template:
-      country: "India"
+      country: "IN"            # 2-letter ISO code (schema example uses "US", not "United States")
       location: "India"
-      maxItemsPerSearch: 20    # correct field name (schema: maxItemsPerSearch, not maxItems)
+      maxItemsPerSearch: 20
       followApplyRedirects: false
       parseCompanyDetails: false
       saveOnlyUniqueItems: true
@@ -185,23 +183,18 @@ apify_actors:
 
   wellfound:
     enabled: true
-    # radeance/wellfound-job-listings-scraper — 1.1K users, 4.9 rating
-    # No keyword/location field in schema — job_finder.py passes a Wellfound search URL
-    actor_id: "radeance/wellfound-job-listings-scraper"
+    # crawlerbros/wellfound-scraper — free, no login, 5.0 rating (22 reviews)
+    # "keyword" injected per-run by job_finder.py
+    actor_id: "crawlerbros/wellfound-scraper"
     input_template:
-      include_company_profile: true
-      include_job_page: true
-      include_no_experience: true  # include fresher-friendly roles
-      include_no_salary: true
-      only_unique_jobs: true
-      stream_output: true
-      monitoring_mode: false
-      us_date_format: false
+      location: "India"
+      maxResults: 25
 
   glassdoor:
-    enabled: true
-    # crawlerbros/glassdoor-jobs-scraper — 5.0 rating (33 reviews)
+    enabled: false
+    # Disabled: Glassdoor has almost no India jobs (got 0 results) and costs $0.63/run
+    # Re-enable if you want to search US/global roles
     actor_id: "crawlerbros/glassdoor-jobs-scraper"
     input_template:
       location: "India"
-      maxItems: 25             # correct field name (not maxResults)
+      maxItems: 25
