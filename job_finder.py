@@ -274,13 +274,24 @@ def is_india_job(job: dict) -> bool:
     return False
 
 
+_LI_POST_JOB_HINTS = (
+    "intern", "hiring", "role", "position", "developer", "engineer",
+    "apply", "opening", "opportunity", "vacancy", "job",
+)
+
+
 def passes_role_filter(job: dict, profile: dict) -> bool:
     exclude = [
         w.lower()
         for w in profile.get("job_preferences", {}).get("exclude_keywords", [])
     ]
     combined = (job.get("title", "") + " " + job.get("description", "")).lower()
-    return not any(w in combined for w in exclude)
+    if any(w in combined for w in exclude):
+        return False
+    # LinkedIn Posts extra: drop posts that don't mention any job-related keyword
+    if job.get("source") == "LinkedIn Post":
+        return any(h in combined for h in _LI_POST_JOB_HINTS)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -557,16 +568,16 @@ async def collect_jobs(
         merged = {**cfg.get("input_template", {}), **extra_payload}
         tasks.append((source_key, actor_id, merged))
 
-    # LinkedIn Jobs — "urls" field takes plain URL strings (confirmed from actor JSON schema)
-    for kw in keywords[:2]:
+    # LinkedIn Jobs — very cheap (~$0.01/25 results); use all keywords for max coverage
+    for kw in keywords:
         li_url = (
             "https://www.linkedin.com/jobs/search/"
             f"?keywords={quote_plus(kw)}&location=India&position=1&pageNum=0"
         )
         queue("linkedin_jobs", {"urls": [li_url]})
 
-    # LinkedIn Posts — apimaestro actor takes a "query" keyword (free, no cookies)
-    for kw in keywords[:2]:
+    # LinkedIn Posts — free actor; use all keywords for max coverage
+    for kw in keywords:
         queue("linkedin_posts", {"query": f"hiring {kw} India"})
 
     # Indeed India — most expensive actor ($6/1K); 1 run only to avoid 402 on free tier

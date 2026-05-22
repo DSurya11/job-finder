@@ -134,7 +134,7 @@ apify_actors:
     # $1.00/1K — "urls" field (plain URL strings) injected by job_finder.py
     actor_id: "curious_coder/linkedin-jobs-scraper"
     input_template:
-      count: 25
+      count: 50            # increased from 25 — LinkedIn Jobs costs ~$0.01/25 results
       scrapeCompany: true
       splitByLocation: false
 
@@ -144,7 +144,7 @@ apify_actors:
     # Input: "query" injected by job_finder.py
     actor_id: "apimaestro/linkedin-posts-search-scraper-no-cookies"
     input_template:
-      count: 20
+      count: 50            # increased from 20 — free actor, no cost penalty
 
   indeed:
     enabled: true
