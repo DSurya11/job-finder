@@ -1,0 +1,160 @@
+# =============================================================================
+# User Profile — fill this in before running job_finder.py
+# Every field here shapes what gets scraped, filtered, and sent to Claude AI.
+# =============================================================================
+
+personal:
+  name: "Dantuluri Surya Narayana Raju"
+  email: ""
+  phone: ""
+  location: "Jabalpur, Madhya Pradesh, India"
+  linkedin: ""
+  github: ""
+  portfolio: ""
+
+education:
+  degree: "B.Tech CSE"
+  institution: "PDPM IIITDM Jabalpur"
+  year: "3rd year (2023–2027 batch)"
+  gpa: "8.1 CPI"
+
+skills:
+  primary:
+    - Python
+    - FastAPI
+    - PostgreSQL
+    - SQLAlchemy
+    - REST APIs
+  secondary:
+    - Node.js
+    - Express.js
+    - React
+    - Django
+    - MySQL
+    - MongoDB
+    - Docker
+    - Git
+    - Swagger / OpenAPI
+  ml_ai:
+    - Scikit-learn
+    - XGBoost
+    - TensorFlow
+    - Keras
+    - NumPy
+    - Pandas
+  competitive_programming:
+    - "LeetCode Knight (1930+ rating, 750+ problems)"
+    - "Codeforces Pupil (1266 rating)"
+    - "CodeChef 3-star"
+
+experience:
+  - role: "Backend Contributor"
+    company: "Fusion IIITDMJ (Open Source)"
+    duration: "2024"
+    highlights:
+      - "Mapped 30+ Django REST API endpoints"
+      - "Security hardening and UML documentation"
+
+projects:
+  - name: "Credit Risk Prediction"
+    tech: "FastAPI + PostgreSQL + Scikit-learn + Docker"
+    description: "Deployed on Render — 98.1% accuracy Random Forest model"
+    url: ""
+  - name: "Crypto Momentum Intelligence"
+    tech: "FastAPI + React + PostgreSQL + XGBoost"
+    description: "Real-time ETL pipeline processing 1000+ swap events/hr"
+    url: ""
+
+# Path to your resume PDF (relative to this file, or absolute)
+resume_path: "Dantuluri Surya Narayana Raju 23BCS071.pdf"
+
+# -----------------------------------------------------------------------------
+# Job preferences — used for filtering and the Claude AI prompt
+# -----------------------------------------------------------------------------
+job_preferences:
+  type: "internship"               # internship | full-time
+  paid_only: true
+  preferred_locations:
+    - "Remote"
+    - "Hyderabad"
+    - "India"
+  roles:
+    - "Python Backend Developer Intern"
+    - "FastAPI Developer Intern"
+    - "Backend Engineer Intern"
+    - "Software Engineer Intern (Python)"
+    - "AI/ML Engineer Intern"
+    - "Full Stack Developer Intern"
+    - "MERN Stack Intern"
+  # Jobs containing ANY of these words will be dropped before export
+  exclude_keywords:
+    - "unpaid"
+    - "no stipend"
+    - "3+ years"
+    - "5+ years"
+    - "senior"
+    - "manager"
+    - "lead"
+    - "director"
+    - "principal"
+    - "us only"
+    - "uk only"
+    - "canada only"
+
+# -----------------------------------------------------------------------------
+# Search keywords — each keyword triggers one actor run per enabled source
+# Keep to 3–4 to avoid excessive Apify compute cost
+# -----------------------------------------------------------------------------
+search:
+  keywords:
+    - "python backend developer intern India"
+    - "fastapi intern India"
+    - "software engineer intern India"
+    - "machine learning intern India"
+    - "full stack developer intern India"
+  max_results_per_actor: 50
+
+# -----------------------------------------------------------------------------
+# Apify actor configuration
+# Find actor IDs at https://console.apify.com/store
+# Set enabled: false to skip a source
+# Adjust input_template fields to match the actor's input schema
+# -----------------------------------------------------------------------------
+apify_actors:
+
+  linkedin_jobs:
+    enabled: true
+    actor_id: "curious_coder/linkedin-jobs-scraper"
+    input_template:
+      location: "India"
+      maxResults: 50
+
+  linkedin_posts:
+    enabled: true
+    actor_id: "curious_coder/linkedin-post-scraper"
+    input_template:
+      maxResults: 30
+
+  indeed:
+    enabled: true
+    actor_id: "misceres/indeed-scraper"
+    input_template:
+      country: "in"
+      location: "India"
+      maxItems: 50
+
+  glassdoor:
+    enabled: true
+    actor_id: "bebity/glassdoor-jobs-scraper"
+    input_template:
+      location: "India"
+      maxResults: 50
+
+  naukri:
+    # No universally reliable Naukri actor yet.
+    # Search https://console.apify.com/store?search=naukri and paste the actor ID below.
+    enabled: false
+    actor_id: ""
+    input_template:
+      location: "India"
+      maxResults: 50

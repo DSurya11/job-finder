@@ -1,0 +1,5 @@
+httpx
+PyPDF2
+python-dotenv
+pyyaml
+openpyxl

@@ -1,0 +1,7 @@
+.env
+*.pdf
+*.xlsx
+*_claude_prompt.txt
+__pycache__/
+*.pyc
+browser_profile/
