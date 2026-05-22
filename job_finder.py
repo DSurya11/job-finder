@@ -78,8 +78,9 @@ async def _start_run(
     client: httpx.AsyncClient, actor_id: str, payload: dict
 ) -> str | None:
     try:
+        api_id = actor_id.replace("/", "~")
         r = await client.post(
-            f"{APIFY_BASE}/acts/{actor_id}/runs",
+            f"{APIFY_BASE}/acts/{api_id}/runs",
             params={"token": APIFY_TOKEN},
             json=payload,
             timeout=30,
