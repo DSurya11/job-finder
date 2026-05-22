@@ -466,8 +466,9 @@ MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
 Name            : {name}
 Education       : {degree} at {institution} | Year {year} | GPA {gpa}
 Current city    : {location}
-Open to         : {locations_str}
+Open to         : {locations_str}  ← **STRONG preference for Remote or Hyderabad. Non-remote outside these = lower score.**
 Looking for     : {job_type} — PAID only (stipend must be stated or company must be top-tier)
+Home base       : Jabalpur, MP — relocating to a metro city costs ₹8K–15K/month just for rent + food
 Target roles    : {roles_str}
 
 Skills          : {skills_str}
@@ -481,14 +482,22 @@ Resume (first 2500 chars — full PDF attached):
 {'='*64}
 SCORING RUBRIC  (0–10)
 {'='*64}
-10  Python / FastAPI / Django backend intern · India · paid · stipend stated · strong skill overlap
- 9  ML / AI / Data Science intern · India · paid · stipend stated
- 8  Full-stack (React + Python/Node) intern · India · paid
- 7  Cloud / DevOps / general SWE intern · India · paid
- 6  Adjacent tech role (mobile, QA automation) · India · paid
- 4  Requires 2–3 yrs experience  OR  unpaid but top-tier company (Google, Microsoft, unicorn)
- 2  Stipend unknown, company unrecognised
- 0  Non-India · non-tech · requires 3+ yrs · spam / internship farm  →  DROP immediately
+10  Python / FastAPI / Django backend intern · Remote OR Hyderabad · paid · stipend decent
+ 9  ML / AI / Data Science intern · Remote OR Hyderabad · paid · stipend stated
+ 8  Full-stack (React + Python/Node) intern · Remote OR Hyderabad · paid
+ 7  Same roles but in Pune / Chennai / other tier-1 city with livable stipend (see minimums below)
+ 6  Bangalore / Mumbai / Delhi role — ONLY if stipend ≥ ₹20,000/month (rent alone is ₹12K+)
+ 4  Requires 2–3 yrs  OR  unpaid but top-tier company (Google, Microsoft, unicorn)
+ 2  Stipend unknown / unrecognised company / non-preferred city with borderline pay
+ 0  Non-India · non-tech · requires 3+ yrs · spam  →  DROP immediately
+
+MINIMUM LIVABLE STIPEND BY CITY (deduct 2 points if below these; drop if far below AND company unknown):
+  Remote (WFH)  : ₹5,000+/month  (living at home, no rent)
+  Hyderabad     : ₹12,000+/month
+  Pune          : ₹15,000+/month
+  Chennai       : ₹15,000+/month
+  Bengaluru     : ₹20,000+/month  (most expensive — ₹10–15K is NOT livable here)
+  Mumbai / Delhi: ₹22,000+/month  (very high cost of living)
 
 {'='*64}
 HARD FILTERS — silently drop any job that matches these
@@ -500,6 +509,8 @@ HARD FILTERS — silently drop any job that matches these
 ✗  Duplicate URLs (keep only the first occurrence)
 ✗  Spam / "earn from home" / multi-level / vague "work on exciting projects"
 ✗  No direct apply URL found anywhere (Excel URL column empty AND not findable via web search) → drop
+✗  Bengaluru / Mumbai / Delhi office role with stipend < ₹15,000/month AND unknown company → drop
+    (₹10–15K in Bengaluru doesn't cover rent ₹8–12K + food ₹5K + transport ₹2K = ₹15–19K baseline)
 
 {'='*64}
 FINAL OUTPUT — ONE UNIFIED RANKED LIST  (Excel jobs + web-found jobs merged)
