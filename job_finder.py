@@ -178,7 +178,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "company", "companyName"),
         "location": _s(x, "location", "jobLocation"),
         "salary": _s(x, "salary", "salaryInfo"),
-        "url": _s(x, "url", "jobUrl", "link"),
+        "url": _s(x, "applyUrl", "url", "jobUrl", "link"),  # applyUrl = direct apply link
         "description": _s(x, "description", "jobDescription")[:700],
         "source": "LinkedIn Jobs",
         "posted": _s(x, "postedAt", "publishedAt", "date"),
@@ -228,7 +228,7 @@ NORMALIZERS: dict = {
         "company": _s(x, "company", "companyName", "organizationName"),
         "location": _s(x, "location", "city", "jobLocation") or "India",
         "salary": _s(x, "stipend", "salary", "stipendAmount", "monthlyStipend"),
-        "url": _s(x, "url", "link", "applyLink", "internshipUrl"),
+        "url": _s(x, "url", "link", "applyLink", "apply_link", "internshipUrl"),  # apply_link common field
         "description": _s(x, "description", "about", "jobDescription", "details")[:700],
         "source": "Internshala",
         "posted": _s(x, "postedOn", "postedAt", "startDate", "date"),
@@ -316,6 +316,9 @@ def export_to_excel(jobs: list, path: str) -> None:
             cell.alignment = Alignment(wrap_text=(col == 8), vertical="top")
             if i % 2 == 0:
                 cell.fill = _ALT_FILL
+            if col == 9 and val:  # URL column — make it a clickable hyperlink
+                cell.hyperlink = str(val)
+                cell.font = Font(color="0563C1", underline="single")
 
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
