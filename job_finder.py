@@ -426,34 +426,25 @@ Read each row silently. Score it 0–10 using the rubric further below.
 Keep all scores in working memory — you will merge them with Part 2 results.
 
 {'='*64}
-PART 2 — SEARCH THE WEB RIGHT NOW FOR ADDITIONAL LIVE JOBS
+PART 2 — GOOGLE SEARCH FOR ADDITIONAL LIVE JOBS (posted this week)
 {'='*64}
-Use your web search / browsing tool to visit each URL below.
-From each page extract every visible job listing: Title, Company, Location, Stipend, and the direct apply URL.
-Do NOT summarise or skip listings — capture as many as the page shows.
+Use your **web search tool** (NOT browser navigation) to run each query below as a Google search.
+For each result in the search snippets, extract the job Title, Company, Location, Stipend, and the EXACT URL shown in the search result.
 
-### Internshala  (highest priority — India internships)
-{internshala_urls}
+⚠️  STRICT URL RULE FOR PART 2:
+- Copy the EXACT URL from the Google search result snippet — do NOT modify, reconstruct, or guess any URL
+- If the search snippet does not show a direct apply URL, skip that listing entirely
+- NEVER visit a job board and manually construct a URL (e.g. internshala.com/internship/detail/[guessed-id])
+- A company careers homepage (e.g. jobs.natwestgroup.com/search/jobs) is NOT a valid apply URL — skip it
 
-### Naukri  (India's largest job board)
-{naukri_urls}
-
-### LinkedIn Jobs  (filter: Internship, Entry level, past week)
-{linkedin_urls}
-
-### Glassdoor India  (we skipped scraping this — search it now)
-  • https://www.glassdoor.co.in/Job/india-python-intern-jobs-SRCH_IL.0,5_IN115_KO6,19.htm
-  • https://www.glassdoor.co.in/Job/india-software-engineer-intern-jobs-SRCH_IL.0,5_IN115_KO6,31.htm
-  • https://www.glassdoor.co.in/Job/india-machine-learning-intern-jobs-SRCH_IL.0,5_IN115_KO6,30.htm
-
-### Indeed India  (backup — we had API issues scraping this)
-  • https://in.indeed.com/jobs?q=python+backend+intern&l=India&fromage=7
-  • https://in.indeed.com/jobs?q=software+engineer+intern&l=India&fromage=7
-  • https://in.indeed.com/jobs?q=machine+learning+intern&l=India&fromage=7
-
-### Unstop  (India hackathons + fresher jobs + internships)
-  • https://unstop.com/internships?opportunity=Internships&domain=Technology
-  • https://unstop.com/jobs?opportunity=Jobs&domain=Technology&location=India
+### Google searches to run (run all of these):
+  1. site:internshala.com python internship paid work-from-home 2025
+  2. site:internshala.com machine learning internship paid India 2025
+  3. site:internshala.com fastapi backend internship India stipend
+  4. site:naukri.com python developer intern freshers India 2025
+  5. site:unstop.com python software engineer internship India 2025
+  6. python backend intern India paid stipend site:linkedin.com/jobs
+  7. machine learning intern India remote paid site:linkedin.com/jobs
 
 {'='*64}
 MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
