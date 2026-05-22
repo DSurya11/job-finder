@@ -398,7 +398,7 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
     linkedin_urls = "\n".join(
         "  • https://www.linkedin.com/jobs/search/?keywords="
         + quote_plus(kw)
-        + "&location=India&f_E=1&f_JT=I&sortBy=DD"
+        + "&location=India&f_E=1&f_JT=I&f_TPR=r604800&sortBy=DD"  # past 7 days
         for kw in keywords[:3]
     )
 
@@ -440,11 +440,6 @@ Do NOT summarise or skip listings — capture as many as the page shows.
 
 ### LinkedIn Jobs  (filter: Internship, Entry level, past week)
 {linkedin_urls}
-
-### Wellfound / AngelList  (startups)
-  • https://wellfound.com/jobs?query=python+backend+intern&locationSlugs%5B%5D=in-india
-  • https://wellfound.com/jobs?query=machine+learning+intern&locationSlugs%5B%5D=in-india
-  • https://wellfound.com/jobs?query=software+engineer+intern&locationSlugs%5B%5D=in-india
 
 ### Glassdoor India  (we skipped scraping this — search it now)
   • https://www.glassdoor.co.in/Job/india-python-intern-jobs-SRCH_IL.0,5_IN115_KO6,19.htm
@@ -591,7 +586,7 @@ async def collect_jobs(
     for kw in keywords:
         li_url = (
             "https://www.linkedin.com/jobs/search/"
-            f"?keywords={quote_plus(kw)}&location=India&position=1&pageNum=0"
+            f"?keywords={quote_plus(kw)}&location=India&f_TPR=r604800&position=1&pageNum=0"  # f_TPR=r604800 = past 7 days
         )
         queue("linkedin_jobs", {"urls": [li_url]})
 

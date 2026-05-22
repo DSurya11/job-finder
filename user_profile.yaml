@@ -156,6 +156,7 @@ apify_actors:
       location: "India"
       maxItemsPerSearch: 20
       followApplyRedirects: false
+      fromAge: 7               # only jobs posted in the last 7 days
       parseCompanyDetails: false
       saveOnlyUniqueItems: true
 
