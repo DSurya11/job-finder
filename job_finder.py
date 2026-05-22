@@ -3,7 +3,7 @@
 Flow:
   1. Load user_profile.yaml + resume PDF.
   2. Call configured Apify actors in parallel
-     (LinkedIn Jobs, LinkedIn Posts, Indeed, Glassdoor, Naukri).
+     (LinkedIn Jobs, LinkedIn Posts, Indeed India, Naukri, Internshala, Wellfound, Glassdoor).
   3. Filter results: India-only, no excluded keywords, deduplicate by URL.
   4. Export jobs.xlsx — formatted for upload to Claude AI.
   5. Save <name>_claude_prompt.txt — paste directly into Claude.ai.
@@ -19,6 +19,7 @@ import asyncio
 import os
 import time
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import httpx
 import openpyxl
@@ -221,6 +222,26 @@ NORMALIZERS: dict = {
         "source": "Naukri",
         "posted": _s(x, "freshness", "postedAt", "date"),
     },
+    "internshala": lambda x: {
+        "title": _s(x, "title", "internshipTitle", "profile"),
+        "company": _s(x, "company", "companyName", "organizationName"),
+        "location": _s(x, "location", "city", "jobLocation") or "India",
+        "salary": _s(x, "stipend", "salary", "stipendAmount", "monthlyStipend"),
+        "url": _s(x, "url", "link", "applyLink", "internshipUrl"),
+        "description": _s(x, "description", "about", "jobDescription", "details")[:700],
+        "source": "Internshala",
+        "posted": _s(x, "postedOn", "postedAt", "startDate", "date"),
+    },
+    "wellfound": lambda x: {
+        "title": _s(x, "title", "jobTitle", "role"),
+        "company": _s(x, "company", "companyName", "startupName", "organizationName"),
+        "location": _s(x, "location", "jobLocation", "remote"),
+        "salary": _s(x, "compensation", "salary", "equity", "salaryRange"),
+        "url": _s(x, "url", "jobUrl", "link", "applyUrl"),
+        "description": _s(x, "description", "jobDescription", "about")[:700],
+        "source": "Wellfound",
+        "posted": _s(x, "postedAt", "createdAt", "date"),
+    },
 }
 
 
@@ -228,6 +249,9 @@ NORMALIZERS: dict = {
 # Filters
 # ---------------------------------------------------------------------------
 def is_india_job(job: dict) -> bool:
+    # Internshala and Naukri are India-only platforms — always pass
+    if job.get("source") in ("Internshala", "Naukri"):
+        return True
     loc = (job.get("location") or "").lower()
     desc = (job.get("description") or "").lower()
     if any(kw in loc for kw in NON_INDIA_LOCS):
@@ -391,20 +415,37 @@ async def collect_jobs(
         merged = {**cfg.get("input_template", {}), **extra_payload}
         tasks.append((source_key, actor_id, merged))
 
+    # LinkedIn Jobs — actor takes search page URLs, not a bare keyword
     for kw in keywords[:3]:
-        queue("linkedin_jobs", {"searchQuery": kw})
+        li_url = (
+            "https://www.linkedin.com/jobs/search/"
+            f"?keywords={quote_plus(kw)}&location=India&position=1&pageNum=0"
+        )
+        queue("linkedin_jobs", {"startUrls": [{"url": li_url}]})
 
+    # LinkedIn Posts — hiring posts mentioning the role
     for kw in keywords[:2]:
         queue("linkedin_posts", {"searchTerms": [f"hiring {kw} India"], "maxResults": 30})
 
+    # Indeed India
     for kw in keywords[:3]:
         queue("indeed", {"position": kw})
 
+    # Naukri — biggest India job board
+    for kw in keywords[:3]:
+        queue("naukri", {"position": kw})
+
+    # Internshala — best source for India internships
+    for kw in keywords[:3]:
+        queue("internshala", {"keyword": kw})
+
+    # Wellfound (AngelList) — startups
+    for kw in keywords[:2]:
+        queue("wellfound", {"searchQuery": kw, "location": "India"})
+
+    # Glassdoor
     for kw in keywords[:2]:
         queue("glassdoor", {"keyword": kw})
-
-    for kw in keywords[:2]:
-        queue("naukri", {"position": kw})
 
     print(f"\nQueued {len(tasks)} actor runs...\n")
 

@@ -124,37 +124,57 @@ apify_actors:
 
   linkedin_jobs:
     enabled: true
+    # Confirmed actor: https://console.apify.com/actors/hKByXkMQaC5Qt9UMN
+    # Input: startUrls is injected by job_finder.py from your search keywords
     actor_id: "curious_coder/linkedin-jobs-scraper"
     input_template:
-      location: "India"
-      maxResults: 50
+      count: 100           # "Number of jobs needed" field in actor UI
+      scrapeCompany: true
 
   linkedin_posts:
     enabled: true
+    # Search Apify Store for: https://console.apify.com/store?search=linkedin+post
     actor_id: "curious_coder/linkedin-post-scraper"
     input_template:
       maxResults: 30
 
   indeed:
     enabled: true
+    # Confirmed actor: https://console.apify.com/actors/hMvNSpz3InHgI5jlch
     actor_id: "misceres/indeed-scraper"
     input_template:
-      country: "in"
+      country: "India"     # full country name, not code
       location: "India"
-      maxItems: 50
+      maxItems: 100
+      saveOnlyUniqueItems: true
 
-  glassdoor:
+  naukri:
     enabled: true
-    actor_id: "bebity/glassdoor-jobs-scraper"
+    # Search: https://console.apify.com/store?search=naukri — verify actor ID before running
+    actor_id: "bebity/naukri-scraper"
+    input_template:
+      location: "India"
+      maxResults: 100
+
+  internshala:
+    enabled: true
+    # Search: https://console.apify.com/store?search=internshala — verify actor ID before running
+    actor_id: "bebity/internshala-scraper"
+    input_template:
+      location: "India"
+      maxResults: 100
+
+  wellfound:
+    enabled: true
+    # Search: https://console.apify.com/store?search=wellfound — verify actor ID before running
+    actor_id: "bebity/wellfound-scraper"
     input_template:
       location: "India"
       maxResults: 50
 
-  naukri:
-    # No universally reliable Naukri actor yet.
-    # Search https://console.apify.com/store?search=naukri and paste the actor ID below.
-    enabled: false
-    actor_id: ""
+  glassdoor:
+    enabled: true
+    actor_id: "bebity/glassdoor-jobs-scraper"
     input_template:
       location: "India"
       maxResults: 50
