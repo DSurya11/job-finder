@@ -106,6 +106,104 @@ job_preferences:
     - "canada only"
 
 # -----------------------------------------------------------------------------
+# Top companies — used by Claude's web searches (Part 2B in the prompt).
+# Grouped into tiers that control the scoring rules.
+# Tier 1 global  : stipend NOT required for a high score (brand name is enough)
+# Tier 2 unicorns: Indian product companies — usually pay well, relax city filter
+# Tier 3 IT      : IT services giants — brand value even if stipend is modest
+# -----------------------------------------------------------------------------
+top_companies:
+  tier1_global:
+    - "Google"
+    - "Microsoft"
+    - "Amazon"
+    - "Meta"
+    - "Apple"
+    - "Adobe"
+    - "Salesforce"
+    - "NVIDIA"
+    - "Qualcomm"
+    - "Atlassian"
+    - "Uber"
+    - "Stripe"
+    - "Databricks"
+    - "Snowflake"
+    - "Palantir"
+    - "Goldman Sachs"
+    - "JPMorgan"
+    - "Bloomberg"
+    - "Morgan Stanley"
+    - "SAP Labs"
+    - "Cisco"
+    - "IBM"
+    - "Intel"
+    - "Oracle"
+    - "VMware"
+    - "Samsung R&D"
+    - "Dell Technologies"
+    - "Arista Networks"
+    - "Rubrik"
+    - "Coinbase"
+    - "Airbnb"
+    - "Tower Research"
+    - "Media.net"
+  tier2_india_unicorns:
+    - "Razorpay"
+    - "CRED"
+    - "Flipkart"
+    - "Meesho"
+    - "PhonePe"
+    - "Groww"
+    - "Zomato"
+    - "Swiggy"
+    - "Zepto"
+    - "Freshworks"
+    - "Zoho"
+    - "InMobi"
+    - "Postman"
+    - "BrowserStack"
+    - "Juspay"
+    - "Paytm"
+    - "Nykaa"
+    - "Upstox"
+    - "CoinDCX"
+    - "ShareChat"
+    - "Dream11"
+    - "Sprinklr"
+    - "Rippling"
+    - "Myntra"
+    - "Urban Company"
+    - "Ola"
+    - "Cars24"
+    - "PolicyBazaar"
+    - "BlackBuck"
+    - "Porter"
+    - "Observe.AI"
+    - "Sarvam AI"
+    - "Krutrim"
+    - "Graviton"
+    - "Walmart Global Tech"
+    - "Intuit"
+    - "PayPal"
+    - "ServiceNow"
+    - "Twilio"
+  tier3_it_services:
+    - "TCS"
+    - "Infosys"
+    - "Wipro"
+    - "Accenture"
+    - "Cognizant"
+    - "Capgemini"
+    - "Deloitte"
+    - "LTIMindtree"
+    - "HCLTech"
+    - "Tech Mahindra"
+    - "Persistent Systems"
+    - "Mu Sigma"
+    - "Fractal Analytics"
+    - "Tiger Analytics"
+
+# -----------------------------------------------------------------------------
 # Search keywords — each keyword triggers one actor run per enabled source
 # Keep to 3–4 to avoid excessive Apify compute cost
 # -----------------------------------------------------------------------------
@@ -117,6 +215,14 @@ search:
     - "machine learning intern India"
     - "full stack developer intern India"
   max_results_per_actor: 30   # keep low to stay within $5 free tier
+
+  # Optional: company-specific LinkedIn keyword searches.
+  # Each entry triggers one extra LinkedIn Jobs actor run (~$0.01 each).
+  # Keep this list short. Claude's web searches cover these for free.
+  company_keywords:
+    - "Google software intern India 2025"
+    - "Microsoft software intern India 2025"
+    - "Goldman Sachs technology intern India 2025"
 
   # Internshala is category-based (not keyword). These map to its job_category field.
   internshala_categories:

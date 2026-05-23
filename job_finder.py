@@ -439,6 +439,35 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
     location      = p.get("location", "")
     job_type      = prefs.get("type", "internship")
 
+    # Top companies — build Google search batches for Part 2B
+    top_cos = profile.get("top_companies", {})
+    t1 = top_cos.get("tier1_global", [])
+    t2 = top_cos.get("tier2_india_unicorns", [])
+    t3 = top_cos.get("tier3_it_services", [])
+
+    def _or_batch(companies: list, start: int, end: int) -> str:
+        batch = companies[start:end]
+        if not batch:
+            return ""
+        return " OR ".join(f'"{c}"' if " " in c else c for c in batch)
+
+    # Tier 1: tech companies (exclude finance names for a separate query)
+    _finance = {"Goldman Sachs", "JPMorgan", "Bloomberg", "Morgan Stanley", "Tower Research"}
+    t1_tech    = [c for c in t1 if c not in _finance]
+    t1_finance = [c for c in t1 if c in _finance]
+
+    t1_q1 = _or_batch(t1_tech, 0, 4)       # Google OR Microsoft OR Amazon OR Meta
+    t1_q2 = _or_batch(t1_tech, 4, 8)       # Adobe OR Salesforce OR NVIDIA OR Qualcomm
+    t1_q3 = _or_batch(t1_finance, 0, 4)    # Goldman Sachs OR JPMorgan OR Bloomberg...
+    t2_q1 = _or_batch(t2, 0, 5)            # Razorpay OR CRED OR Flipkart OR Meesho OR PhonePe
+    t2_q2 = _or_batch(t2, 5, 9)            # Groww OR Zomato OR Freshworks OR Zoho
+    t3_q1 = _or_batch(t3, 0, 5)            # TCS OR Infosys OR Wipro OR Accenture OR Cognizant
+
+    # Short name strings for rubric display
+    t1_sample = ", ".join(t1[:6]) + ("..." if len(t1) > 6 else "")
+    t2_sample = ", ".join(t2[:6]) + ("..." if len(t2) > 6 else "")
+    t3_sample = ", ".join(t3[:5]) + ("..." if len(t3) > 5 else "")
+
     return f"""You have two files attached:
   1. **jobs.xlsx** — {job_count} internship listings scraped from LinkedIn, Naukri, and Internshala (India, pre-filtered)
   2. **Resume PDF** — my full CV
@@ -452,18 +481,19 @@ Read each row silently. Score it 0–10 using the rubric further below.
 Keep all scores in working memory — you will merge them with Part 2 results.
 
 {'='*64}
-PART 2 — GOOGLE SEARCH FOR ADDITIONAL LIVE JOBS (posted this week)
+PART 2A — JOB BOARD SEARCHES (posted this week)
 {'='*64}
 Use your **web search tool** (NOT browser navigation) to run each query below as a Google search.
 For each result in the search snippets, extract the job Title, Company, Location, Stipend, and the EXACT URL shown in the search result.
 
-⚠️  STRICT URL RULE FOR PART 2:
+⚠️  STRICT URL RULE (applies to ALL Part 2A and 2B searches):
 - Copy the EXACT URL from the Google search result snippet — do NOT modify, reconstruct, or guess any URL
-- If the search snippet does not show a direct apply URL, skip that listing entirely
+- You do NOT need to browse/click through — the snippet URL is sufficient verification
+- If the search snippet does not show a direct listing URL, skip that result
 - NEVER visit a job board and manually construct a URL (e.g. internshala.com/internship/detail/[guessed-id])
-- A company careers homepage (e.g. jobs.natwestgroup.com/search/jobs) is NOT a valid apply URL — skip it
+- A company homepage or search results page is NOT a valid apply URL — skip it
 
-### Google searches to run (run all of these):
+### Job board searches (7 queries):
   1. site:internshala.com/internship/detail python internship paid work-from-home 2025
   2. site:internshala.com/internship/detail machine learning internship stipend India 2025
   3. site:internshala.com/internship/detail fastapi OR backend internship India stipend
@@ -471,6 +501,22 @@ For each result in the search snippets, extract the job Title, Company, Location
   5. site:indeed.co.in python developer intern freshers India 2025
   6. site:linkedin.com/jobs/view python backend intern India 2025
   7. site:linkedin.com/jobs/view "machine learning" intern India remote 2025
+
+{'='*64}
+PART 2B — TOP COMPANY INTERNSHIP SEARCHES
+{'='*64}
+Same URL rule applies. For Tier 1 / Tier 2 companies stipend does NOT need to be stated —
+they always pay interns; amount is revealed on the application page.
+
+### Top company searches (8 queries):
+  8. {t1_q1} software OR "machine learning" intern India 2025
+  9. {t1_q2} intern India 2025
+ 10. {t1_q3} technology intern India 2025
+ 11. {t2_q1} intern India 2025
+ 12. {t2_q2} software engineering intern India 2025
+ 13. {t3_q1} intern India 2025
+ 14. site:boards.greenhouse.io python OR "machine learning" intern India 2025
+ 15. site:jobs.lever.co python OR backend OR "machine learning" intern India 2025
 
 {'='*64}
 MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
@@ -494,35 +540,50 @@ Resume (first 2500 chars — full PDF attached):
 {'='*64}
 SCORING RUBRIC  (0–10)
 {'='*64}
+
+TOP-COMPANY OVERRIDE — check this FIRST before applying standard rubric:
+  Tier 1 Global ({t1_sample}):
+    → Python / FastAPI / ML / AI / GenAI role  = 10  (regardless of stipend or city)
+    → Any SWE / data engineering / backend     =  9
+    → Any other tech role                      =  8
+  Tier 2 India Unicorn ({t2_sample}):
+    → Python / FastAPI / ML / AI / GenAI role  =  9
+    → Any SWE / data / backend role            =  8
+    → Any other tech role                      =  7
+  Tier 3 IT Services ({t3_sample}):
+    → Python / ML / SWE relevant role          =  6
+    → Other tech role                          =  5
+
+STANDARD RUBRIC (for all other companies, after top-company check):
 10  Python / FastAPI / Django backend intern · Remote OR Hyderabad · paid · stipend decent
  9  ML / AI / Data Science intern · Remote OR Hyderabad · paid · stipend stated
  8  Full-stack (React + Python/Node) intern · Remote OR Hyderabad · paid
  7  Same roles but in Pune / Chennai / other tier-1 city with livable stipend (see minimums below)
  6  Bangalore / Mumbai / Delhi role — ONLY if stipend ≥ ₹20,000/month (rent alone is ₹12K+)
- 4  Requires 2–3 yrs  OR  unpaid but top-tier company (Google, Microsoft, unicorn)
+ 4  Requires 2–3 yrs  OR  unknown company with unstated stipend
  2  Stipend unknown / unrecognised company / non-preferred city with borderline pay
  0  Non-India · non-tech · requires 3+ yrs · spam  →  DROP immediately
 
-MINIMUM LIVABLE STIPEND BY CITY (deduct 2 points if below these; drop if far below AND company unknown):
-  Remote (WFH)  : ₹5,000+/month  (living at home, no rent)
+MINIMUM LIVABLE STIPEND BY CITY (deduct 2 pts if below — EXCEPT for Tier 1/2 companies):
+  Remote (WFH)  : ₹5,000+/month
   Hyderabad     : ₹12,000+/month
   Pune          : ₹15,000+/month
   Chennai       : ₹15,000+/month
-  Bengaluru     : ₹20,000+/month  (most expensive — ₹10–15K is NOT livable here)
-  Mumbai / Delhi: ₹22,000+/month  (very high cost of living)
+  Bengaluru     : ₹20,000+/month
+  Mumbai / Delhi: ₹22,000+/month
 
 {'='*64}
 HARD FILTERS — silently drop any job that matches these
 {'='*64}
 ✗  Location outside India (except explicitly "Remote — open to India")
 ✗  Requires 3 or more years of experience
-✗  Unpaid AND company is not widely recognised
 ✗  Non-tech role (marketing, HR, sales, operations, content writing)
 ✗  Duplicate URLs (keep only the first occurrence)
 ✗  Spam / "earn from home" / multi-level / vague "work on exciting projects"
-✗  No direct apply URL found anywhere (Excel URL column empty AND not findable via web search) → drop
-✗  Bengaluru / Mumbai / Delhi office role with stipend < ₹15,000/month AND unknown company → drop
-    (₹10–15K in Bengaluru doesn't cover rent ₹8–12K + food ₹5K + transport ₹2K = ₹15–19K baseline)
+✗  No direct apply URL found anywhere → drop
+✗  Unpaid AND company NOT in Tier 1 Global or Tier 2 Unicorn list → drop
+✗  Bengaluru/Mumbai/Delhi role with stipend < ₹15,000/month AND company not in top_companies → drop
+    ↳ EXCEPTION: NEVER drop Tier 1 Global or Tier 2 Unicorn companies regardless of stated stipend
 
 {'='*64}
 FINAL OUTPUT — ONE UNIFIED RANKED LIST  (Excel jobs + web-found jobs merged)
@@ -605,6 +666,15 @@ async def collect_jobs(
         li_url = (
             "https://www.linkedin.com/jobs/search/"
             f"?keywords={quote_plus(kw)}&location=India&f_TPR=r604800&position=1&pageNum=0"  # f_TPR=r604800 = past 7 days
+        )
+        queue("linkedin_jobs", {"urls": [li_url]})
+
+    # LinkedIn Jobs — optional company-specific searches (wider 30-day window for top companies)
+    company_kws = profile.get("search", {}).get("company_keywords", [])
+    for kw in company_kws:
+        li_url = (
+            "https://www.linkedin.com/jobs/search/"
+            f"?keywords={quote_plus(kw)}&location=India&f_TPR=r2592000&position=1&pageNum=0"  # 30 days
         )
         queue("linkedin_jobs", {"urls": [li_url]})
 
