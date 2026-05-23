@@ -468,6 +468,8 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
     t2_sample = ", ".join(t2[:6]) + ("..." if len(t2) > 6 else "")
     t3_sample = ", ".join(t3[:5]) + ("..." if len(t3) > 5 else "")
 
+    current_year = datetime.now().year
+
     return f"""You have two files attached:
   1. **jobs.xlsx** — {job_count} internship listings scraped from LinkedIn, Naukri, and Internshala (India, pre-filtered)
   2. **Resume PDF** — my full CV
@@ -494,13 +496,13 @@ For each result in the search snippets, extract the job Title, Company, Location
 - A company homepage or search results page is NOT a valid apply URL — skip it
 
 ### Job board searches (7 queries):
-  1. site:internshala.com/internship/detail python internship paid work-from-home 2025
-  2. site:internshala.com/internship/detail machine learning internship stipend India 2025
+  1. site:internshala.com/internship/detail python internship paid work-from-home {current_year}
+  2. site:internshala.com/internship/detail machine learning internship stipend India {current_year}
   3. site:internshala.com/internship/detail fastapi OR backend internship India stipend
-  4. site:unstop.com python OR "machine learning" internship India 2025 paid
-  5. site:indeed.co.in python developer intern freshers India 2025
-  6. site:linkedin.com/jobs/view python backend intern India 2025
-  7. site:linkedin.com/jobs/view "machine learning" intern India remote 2025
+  4. site:unstop.com python OR "machine learning" internship India {current_year} paid
+  5. site:indeed.co.in python developer intern freshers India {current_year}
+  6. site:linkedin.com/jobs/view python backend intern India {current_year}
+  7. site:linkedin.com/jobs/view "machine learning" intern India remote {current_year}
 
 {'='*64}
 PART 2B — TOP COMPANY INTERNSHIP SEARCHES
@@ -509,14 +511,14 @@ Same URL rule applies. For Tier 1 / Tier 2 companies stipend does NOT need to be
 they always pay interns; amount is revealed on the application page.
 
 ### Top company searches (8 queries):
-  8. {t1_q1} software OR "machine learning" intern India 2025
-  9. {t1_q2} intern India 2025
- 10. {t1_q3} technology intern India 2025
- 11. {t2_q1} intern India 2025
- 12. {t2_q2} software engineering intern India 2025
- 13. {t3_q1} intern India 2025
- 14. site:boards.greenhouse.io python OR "machine learning" intern India 2025
- 15. site:jobs.lever.co python OR backend OR "machine learning" intern India 2025
+  8. {t1_q1} software OR "machine learning" intern India {current_year}
+  9. {t1_q2} intern India {current_year}
+ 10. {t1_q3} technology intern India {current_year}
+ 11. {t2_q1} intern India {current_year}
+ 12. {t2_q2} software engineering intern India {current_year}
+ 13. {t3_q1} intern India {current_year}
+ 14. site:boards.greenhouse.io python OR "machine learning" intern India {current_year}
+ 15. site:jobs.lever.co python OR backend OR "machine learning" intern India {current_year}
 
 {'='*64}
 MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
