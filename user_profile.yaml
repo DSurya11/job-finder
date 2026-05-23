@@ -64,9 +64,13 @@ projects:
     tech: "FastAPI + React + PostgreSQL + XGBoost"
     description: "Real-time ETL pipeline processing 1000+ swap events/hr"
     url: ""
+  - name: "MockMate"
+    tech: "FastAPI + Groq LLM API + BullMQ + React"
+    description: "AI-powered mock interview platform with async job queues and LLM-generated feedback"
+    url: ""
 
 # Path to your resume PDF (relative to this file, or absolute)
-resume_path: "Dantuluri Surya Narayana Raju 23BCS071.pdf"
+resume_path: "Dantuluri Surya Naryana Raju.pdf"
 
 # -----------------------------------------------------------------------------
 # Job preferences — used for filtering and the Claude AI prompt

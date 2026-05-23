@@ -165,10 +165,20 @@ def _s(d: dict, *keys: str, default: str = "") -> str:
 
 def _find_url(d: dict) -> str:
     """Fallback: scan all fields and return the first value that starts with http
-    and whose key name suggests it is a URL or link."""
+    and whose key name suggests it is a URL or link.
+    Skips image/logo URLs (common false-positive from Naukri/LinkedIn actors)."""
+    _IMG_KEY_HINTS = ("logo", "image", "photo", "avatar", "icon", "thumbnail", "banner")
+    _IMG_VAL_HINTS = (".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico",
+                      "img.", "/images/", "/logos/", "naukimg.com")
     for k, v in d.items():
         if v and isinstance(v, str) and v.startswith("http"):
             if any(h in k.lower() for h in ("url", "link", "apply", "href")):
+                k_low = k.lower()
+                v_low = v.lower()
+                if any(s in k_low for s in _IMG_KEY_HINTS):
+                    continue
+                if any(s in v_low for s in _IMG_VAL_HINTS):
+                    continue
                 return v.strip()
     return ""
 
@@ -226,14 +236,14 @@ NORMALIZERS: dict = {
         "posted": _s(x, "listingDate", "postedAt", "date"),
     },
     "naukri": lambda x: {
-        "title": _s(x, "jobTitle", "title"),
-        "company": _s(x, "companyName", "company"),
-        "location": _s(x, "location", "jobLocation"),
-        "salary": _s(x, "salary", "salaryDetail"),
-        "url": _s(x, "jdURL", "jdUrl", "url", "link") or _find_url(x),  # jdUrl/jdURL both tried
-        "description": _s(x, "jobDescription", "description")[:700],
+        "title": _s(x, "jobTitle", "title", "designation"),
+        "company": _s(x, "companyName", "company", "ambitionBoxData"),
+        "location": _s(x, "location", "jobLocation", "placeholders"),
+        "salary": _s(x, "salary", "salaryDetail", "salaryMin"),
+        "url": _s(x, "jdURL", "jdUrl", "jobUrl", "jobLink", "applyUrl", "url", "link") or _find_url(x),
+        "description": _s(x, "jobDescription", "description", "jobDetails")[:700],
         "source": "Naukri",
-        "posted": _s(x, "freshness", "postedAt", "date"),
+        "posted": _s(x, "freshness", "postedAt", "createdDate", "date"),
     },
     "internshala": lambda x: {
         "title": _s(x, "title", "internshipTitle", "profile"),
@@ -418,33 +428,6 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
         else "(resume not loaded — please attach the PDF)"
     )
 
-    # Build live search URLs Claude should visit
-    internshala_urls = "\n".join(
-        "  • https://internshala.com/internships/"
-        + cat.lower().replace(" / ", "-").replace("/", "-").replace(" ", "-")
-        + "-internship/"
-        for cat in i_cats[:4]
-    )
-    internshala_urls += (
-        "\n  • https://internshala.com/internships/internship-in-india/"
-        "\n  • https://internshala.com/internships/work-from-home-internship/"
-    )
-
-    naukri_urls = "\n".join(
-        "  • https://www.naukri.com/"
-        + kw.lower().replace(" ", "-")
-        + "-jobs?experience=0&jobAge=7"
-        for kw in keywords[:3]
-    )
-    naukri_urls += "\n  • https://www.naukri.com/internship-jobs-in-india?experience=0"
-
-    linkedin_urls = "\n".join(
-        "  • https://www.linkedin.com/jobs/search/?keywords="
-        + quote_plus(kw)
-        + "&location=India&f_E=1&f_JT=I&f_TPR=r604800&sortBy=DD"  # past 7 days
-        for kw in keywords[:3]
-    )
-
     roles_str     = ", ".join(prefs.get("roles", []))
     locations_str = ", ".join(prefs.get("preferred_locations", ["India"]))
     skills_str    = ", ".join(all_skills)
@@ -481,13 +464,13 @@ For each result in the search snippets, extract the job Title, Company, Location
 - A company careers homepage (e.g. jobs.natwestgroup.com/search/jobs) is NOT a valid apply URL — skip it
 
 ### Google searches to run (run all of these):
-  1. site:internshala.com python internship paid work-from-home 2025
-  2. site:internshala.com machine learning internship paid India 2025
-  3. site:internshala.com fastapi backend internship India stipend
-  4. site:naukri.com python developer intern freshers India 2025
-  5. site:unstop.com python software engineer internship India 2025
-  6. python backend intern India paid stipend site:linkedin.com/jobs
-  7. machine learning intern India remote paid site:linkedin.com/jobs
+  1. site:internshala.com/internship/detail python internship paid work-from-home 2025
+  2. site:internshala.com/internship/detail machine learning internship stipend India 2025
+  3. site:internshala.com/internship/detail fastapi OR backend internship India stipend
+  4. site:unstop.com python OR "machine learning" internship India 2025 paid
+  5. site:indeed.co.in python developer intern freshers India 2025
+  6. site:linkedin.com/jobs/view python backend intern India 2025
+  7. site:linkedin.com/jobs/view "machine learning" intern India remote 2025
 
 {'='*64}
 MY PROFILE  (use this for ALL scoring — both Excel rows and web-found jobs)
@@ -580,13 +563,14 @@ End with exactly this summary line:
 - Prefer Remote or Hyderabad roles when scores are tied
 - Zero tolerance for fake internship farms or unverified "apply via WhatsApp" listings
 
-**CRITICAL — Web-found URLs must be 100% verified. NO hallucination allowed:**
-- For ANY web-found listing, you must have directly browsed to that exact URL and seen the live job page
-- NEVER construct or guess a URL by inserting a job ID or slug you inferred (e.g. wellfound.com/jobs/XXXXXX-title)
+**CRITICAL — Web-found URLs must come from Google search result snippets. NO hallucination allowed:**
+- For ANY web-found listing, the URL MUST be copied verbatim from the Google search result snippet
+- You do NOT need to browse to or click the URL to verify it — the Google search snippet is sufficient
+- Job boards like Internshala, Naukri, and LinkedIn show their individual listing URLs in Google results; copy those exactly
+- NEVER construct or guess a URL by inserting a job ID or slug you inferred (e.g. internshala.com/internship/detail/XXXXXX)
 - NEVER reuse a URL pattern from one listing and substitute different IDs or titles
-- If you are not 100% certain a URL exists and is live, omit the entire web-found listing — do NOT include it
-- It is far better to show 5 verified web-found listings than 15 where half return 404
-- For Wellfound specifically: job IDs expire within days — only include if you clicked through to a live page
+- If no direct listing URL appears in the search snippet (only a homepage or category page), skip that listing
+- It is far better to show 5 real web-found listings than 15 where URLs were guessed
 """
 
 
@@ -685,17 +669,16 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--profile", default="user_profile.yaml", help="Path to user_profile.yaml")
     ap.add_argument("--resume", default=os.getenv("RESUME_PATH", ""), help="Path to resume PDF")
     ap.add_argument("--output", default=OUTPUT_EXCEL, help="Output Excel filename")
+    ap.add_argument(
+        "--prompt-only",
+        action="store_true",
+        help="Skip Apify scraping; regenerate the Claude prompt from the existing Excel file",
+    )
     return ap.parse_args()
 
 
 async def main() -> None:
     args = parse_args()
-
-    if not APIFY_TOKEN:
-        print("ERROR: APIFY_TOKEN is not set.")
-        print("  1. Get your token: https://console.apify.com/settings/integrations")
-        print("  2. Create a .env file here and add:  APIFY_TOKEN=your_token_here")
-        return
 
     if not Path(args.profile).exists():
         print(f"ERROR: Profile file not found: {args.profile}")
@@ -711,6 +694,39 @@ async def main() -> None:
         print(f"Resume   : {len(resume_text)} chars from {resume_path}")
     else:
         print("Resume   : not loaded (set resume_path in user_profile.yaml or use --resume)")
+
+    output_path = args.output
+
+    # --prompt-only: skip scraping, just regenerate the Claude prompt from existing Excel
+    if args.prompt_only:
+        if not Path(output_path).exists():
+            print(f"ERROR: --prompt-only requires an existing Excel file at: {output_path}")
+            print("  Run without --prompt-only first to scrape and create the file.")
+            return
+        import openpyxl as _ox
+        wb = _ox.load_workbook(output_path, read_only=True)
+        job_count = wb.active.max_row - 1  # subtract header row
+        wb.close()
+        print(f"\nPrompt-only mode: read {job_count} rows from {output_path}")
+        prompt = build_claude_prompt(profile, resume_text, job_count)
+        prompt_file = Path(output_path).stem + "_claude_prompt.txt"
+        Path(prompt_file).write_text(prompt, encoding="utf-8")
+        print(f"Claude prompt   → {prompt_file}")
+        print("\n" + "=" * 60)
+        print("NEXT STEPS — Score your jobs with Claude AI:")
+        print("  1. Open https://claude.ai")
+        print(f"  2. Attach:  {output_path}")
+        if resume_path and Path(resume_path).exists():
+            print(f"  3. Attach:  {resume_path}  (your resume PDF)")
+        print(f"  4. Paste the contents of:  {prompt_file}")
+        print("=" * 60)
+        return
+
+    if not APIFY_TOKEN:
+        print("ERROR: APIFY_TOKEN is not set.")
+        print("  1. Get your token: https://console.apify.com/settings/integrations")
+        print("  2. Create a .env file here and add:  APIFY_TOKEN=your_token_here")
+        return
 
     sem = asyncio.Semaphore(MAX_PARALLEL)
     async with httpx.AsyncClient() as client:
@@ -742,7 +758,6 @@ async def main() -> None:
         print("\nNo jobs found. Check your actor IDs in user_profile.yaml and APIFY_TOKEN.")
         return
 
-    output_path = args.output
     export_to_excel(unique, output_path)
 
     prompt = build_claude_prompt(profile, resume_text, len(unique))
