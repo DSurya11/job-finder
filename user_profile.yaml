@@ -220,9 +220,9 @@ search:
   # Each entry triggers one extra LinkedIn Jobs actor run (~$0.01 each).
   # Keep this list short. Claude's web searches cover these for free.
   company_keywords:
-    - "Google software intern India 2025"
-    - "Microsoft software intern India 2025"
-    - "Goldman Sachs technology intern India 2025"
+    - "Google software intern India"
+    - "Microsoft software intern India"
+    - "Goldman Sachs technology intern India"
 
   # Internshala is category-based (not keyword). These map to its job_category field.
   internshala_categories:

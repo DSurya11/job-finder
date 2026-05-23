@@ -12,6 +12,7 @@ Usage:
   python job_finder.py
   python job_finder.py --resume "path/to/resume.pdf"
   python job_finder.py --profile user_profile.yaml --output jobs.xlsx
+  python job_finder.py --prompt-only   # regenerate prompt from existing Excel, no Apify cost
 """
 
 import argparse
@@ -19,7 +20,7 @@ import asyncio
 import os
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -410,15 +411,13 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
     skills   = profile.get("skills", {})
     projects = profile.get("projects", [])
     keywords = profile.get("search", {}).get("keywords", [])
-    i_cats   = profile.get("search", {}).get(
-        "internshala_categories", ["Software Development", "Machine Learning"]
-    )
 
     all_skills = (
         skills.get("primary", [])
         + skills.get("secondary", [])
         + skills.get("ml_ai", [])
     )
+    cp_skills = skills.get("competitive_programming", [])
     project_lines = "\n".join(
         f"  • {proj['name']}: {proj.get('tech', '')} — {proj.get('description', '')}"
         for proj in projects
@@ -431,6 +430,7 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
     roles_str     = ", ".join(prefs.get("roles", []))
     locations_str = ", ".join(prefs.get("preferred_locations", ["India"]))
     skills_str    = ", ".join(all_skills)
+    cp_str        = ", ".join(cp_skills)
     name          = p.get("name", "")
     degree        = edu.get("degree", "")
     institution   = edu.get("institution", "")
@@ -471,7 +471,7 @@ def build_claude_prompt(profile: dict, resume_text: str, job_count: int) -> str:
     current_year = datetime.now().year
 
     return f"""You have two files attached:
-  1. **jobs.xlsx** — {job_count} internship listings scraped from LinkedIn, Naukri, and Internshala (India, pre-filtered)
+  1. **jobs.xlsx** — {job_count} internship listings scraped from LinkedIn, Naukri, Internshala, Indeed, and more (India, pre-filtered)
   2. **Resume PDF** — my full CV
 
 Complete BOTH parts below before writing ANY output. Do not skip Part 2.
@@ -532,6 +532,7 @@ Home base       : Jabalpur, MP — relocating to a metro city costs ₹8K–15K/
 Target roles    : {roles_str}
 
 Skills          : {skills_str}
+Comp. Prog.     : {cp_str}
 
 Projects:
 {project_lines}
