@@ -1,0 +1,13 @@
+companies:
+- ats: apify
+  careers_url: https://www.google.com/about/careers/applications/
+  enabled: true
+  name: Google
+- ats: apify
+  careers_url: https://careers.microsoft.com/
+  enabled: true
+  name: Microsoft
+- ats: apify
+  careers_url: https://www.flipkart.com/careers
+  enabled: true
+  name: Flipkart

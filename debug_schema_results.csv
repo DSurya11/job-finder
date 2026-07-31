@@ -1,0 +1,4 @@
+company_name,url,http_status,raw_response_length,has_jobposting_string,has_ldjson_string
+Cisco,https://jobs.cisco.com,200,173333,False,True
+ServiceNow,https://careers.servicenow.com,200,81305,False,False
+SAP Labs India,https://jobs.sap.com,200,84584,False,False

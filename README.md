@@ -51,6 +51,12 @@ Open `user_profile.yaml` and fill in your details:
 python job_finder.py
 ```
 
+### Regenerate Claude prompt from existing Excel (no Apify cost)
+
+```powershell
+python job_finder.py --prompt-only
+```
+
 Override profile or output path:
 
 ```powershell

@@ -1,0 +1,52 @@
+{
+  "PhonePe": {
+    "status": "Found",
+    "endpoint": "https://www.phonepe.com/webstatic/14536/page-data/careers/job-openings/page-data.json",
+    "method": "GET",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
+    },
+    "payload": null,
+    "notes": "Gatsby static page data JSON. Contains all job listings."
+  },
+  "Cisco": {
+    "status": "Blocked/Requires Auth",
+    "endpoint": "https://jobs.cisco.com/api/apply/v2/jobs",
+    "method": "POST",
+    "headers": {},
+    "payload": null,
+    "notes": "PhenomPeople ATS. Requires a valid CSRF token (PLAY_SESSION cookie) from initial page load."
+  },
+  "ServiceNow": {
+    "status": "Blocked (403)",
+    "endpoint": "https://careers.servicenow.com/api/apply/v2/jobs",
+    "method": "POST",
+    "headers": {},
+    "payload": null,
+    "notes": "PhenomPeople ATS. Blocks raw Python requests with 403 Forbidden (Cloudflare/Datadome)."
+  },
+  "SAP Labs India": {
+    "status": "No public JSON API",
+    "endpoint": null,
+    "method": null,
+    "headers": null,
+    "payload": null,
+    "notes": "SuccessFactors ATS. Jobs are rendered in server-side HTML tables; no clean JSON API for unauthenticated search."
+  },
+  "Swiggy": {
+    "status": "No public JSON API",
+    "endpoint": null,
+    "method": null,
+    "headers": null,
+    "payload": null,
+    "notes": "Internal custom API or heavily obfuscated. Requires headless browser."
+  },
+  "Freshworks": {
+    "status": "No public JSON API",
+    "endpoint": null,
+    "method": null,
+    "headers": null,
+    "payload": null,
+    "notes": "Uses a mixture of factors.ai and company-target.com for tracking. Actual job list is JS-rendered."
+  }
+}

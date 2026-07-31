@@ -1,0 +1,134 @@
+{
+  "Cisco": {
+    "method_found": "third_party_ats",
+    "endpoint_or_url": "https://cdn.phenompeople.com/CareerConnectResources/master/canvas/css/master-theme-1773647481905.css",
+    "status": "200",
+    "notes": "Detected phenompeople in network requests (Robots.txt: Allowed)"
+  },
+  "DE Shaw": {
+    "method_found": "ats_api_recruitee",
+    "endpoint_or_url": "https://de.recruitee.com/api/offers",
+    "status": "Success",
+    "notes": "Native JSON API discovered (recruitee)"
+  },
+  "Zerodha": {
+    "method_found": "dom_scrape_required",
+    "endpoint_or_url": "https://careers.zerodha.com",
+    "status": "200",
+    "notes": "No ATS or API found. Requires DOM scraping. (Robots.txt: Allowed)"
+  },
+  "Goldman Sachs": {
+    "method_found": "sitemap",
+    "endpoint_or_url": "https://www.goldmansachs.com/sitemap.xml",
+    "status": "Success",
+    "notes": "Sitemap available for scraping"
+  },
+  "Sprinklr": {
+    "method_found": "sitemap",
+    "endpoint_or_url": "https://www.sprinklr.com/sitemap.xml",
+    "status": "Success",
+    "notes": "Sitemap available for scraping"
+  },
+  "Walmart Global Tech": {
+    "method_found": "ats_api_recruitee",
+    "endpoint_or_url": "https://walmart.recruitee.com/api/offers",
+    "status": "Success",
+    "notes": "Native JSON API discovered (recruitee)"
+  },
+  "Uber": {
+    "method_found": "ats_api_smartrecruiters",
+    "endpoint_or_url": "https://api.smartrecruiters.com/v1/companies/uber/postings",
+    "status": "Success",
+    "notes": "Native JSON API discovered (smartrecruiters)"
+  },
+  "Salesforce": {
+    "method_found": "ats_api_recruitee",
+    "endpoint_or_url": "https://salesforce.recruitee.com/api/offers",
+    "status": "Success",
+    "notes": "Native JSON API discovered (recruitee)"
+  },
+  "Meesho": {
+    "method_found": "ats_api_lever",
+    "endpoint_or_url": "https://api.lever.co/v0/postings/meesho?mode=json",
+    "status": "Success",
+    "notes": "Native JSON API discovered (lever)"
+  },
+  "InMobi": {
+    "method_found": "ats_api_greenhouse",
+    "endpoint_or_url": "https://boards-api.greenhouse.io/v1/boards/inmobi/jobs",
+    "status": "Success",
+    "notes": "Native JSON API discovered (greenhouse)"
+  },
+  "Postman": {
+    "method_found": "ats_api_greenhouse",
+    "endpoint_or_url": "https://boards-api.greenhouse.io/v1/boards/postman/jobs",
+    "status": "Success",
+    "notes": "Native JSON API discovered (greenhouse)"
+  },
+  "Groww": {
+    "method_found": "ats_api_greenhouse",
+    "endpoint_or_url": "https://boards-api.greenhouse.io/v1/boards/groww/jobs",
+    "status": "Success",
+    "notes": "Native JSON API discovered (greenhouse)"
+  },
+  "Ola": {
+    "method_found": "dom_scrape_required",
+    "endpoint_or_url": "https://olacareers.com",
+    "status": "200",
+    "notes": "No ATS or API found. Requires DOM scraping. (Robots.txt: Unknown)"
+  },
+  "JPMorgan Chase": {
+    "method_found": "sitemap",
+    "endpoint_or_url": "https://careers.jpmorgan.com/sitemap.xml",
+    "status": "Success",
+    "notes": "Sitemap available for scraping"
+  },
+  "Morgan Stanley": {
+    "method_found": "sitemap",
+    "endpoint_or_url": "https://www.morganstanley.com/sitemap.xml",
+    "status": "Success",
+    "notes": "Sitemap available for scraping"
+  },
+  "Deutsche Bank": {
+    "method_found": "dom_scrape_required",
+    "endpoint_or_url": "https://careers.db.com",
+    "status": "200",
+    "notes": "No ATS or API found. Requires DOM scraping. (Robots.txt: Allowed)"
+  },
+  "Optiver": {
+    "method_found": "ats_api_greenhouse",
+    "endpoint_or_url": "https://boards-api.greenhouse.io/v1/boards/optiver/jobs",
+    "status": "Success",
+    "notes": "Native JSON API discovered (greenhouse)"
+  },
+  "Citadel Securities": {
+    "method_found": "dom_scrape_required",
+    "endpoint_or_url": "https://citadelsecurities.com/careers",
+    "status": "200",
+    "notes": "No ATS or API found. Requires DOM scraping. (Robots.txt: Allowed)"
+  },
+  "Visa": {
+    "method_found": "ats_api_smartrecruiters",
+    "endpoint_or_url": "https://api.smartrecruiters.com/v1/companies/visa/postings",
+    "status": "Success",
+    "notes": "Native JSON API discovered (smartrecruiters)"
+  },
+  "Mastercard": {
+    "method_found": "blocked",
+    "endpoint_or_url": "https://mastercard.com/careers",
+    "status": "403",
+    "notes": "Blocked by WAF during browser load"
+  },
+  "American Express": {
+    "method_found": "third_party_ats",
+    "endpoint_or_url": "https://aexp.eightfold.ai/",
+    "status": "302",
+    "notes": "Detected eightfold.ai in network requests (Robots.txt: Allowed)"
+  },
+  "PayPal": {
+    "method_found": "dom_scrape_required",
+    "endpoint_or_url": "https://careers.pypl.com/home/",
+    "status": "200",
+    "notes": "No ATS or API found. Requires DOM scraping. (Robots.txt: Allowed)"
+  }
+}

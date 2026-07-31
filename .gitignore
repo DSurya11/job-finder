@@ -5,3 +5,6 @@
 __pycache__/
 *.pyc
 browser_profile/
+output/
+dashboard_preview.html
+.waylog/

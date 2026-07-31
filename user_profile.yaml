@@ -64,13 +64,9 @@ projects:
     tech: "FastAPI + React + PostgreSQL + XGBoost"
     description: "Real-time ETL pipeline processing 1000+ swap events/hr"
     url: ""
-  - name: "MockMate"
-    tech: "FastAPI + Groq LLM API + BullMQ + React"
-    description: "AI-powered mock interview platform with async job queues and LLM-generated feedback"
-    url: ""
 
 # Path to your resume PDF (relative to this file, or absolute)
-resume_path: "Dantuluri Surya Naryana Raju.pdf"
+resume_path: "Dantuluri Surya Narayana Raju 23BCS071.pdf"
 
 # -----------------------------------------------------------------------------
 # Job preferences — used for filtering and the Claude AI prompt
@@ -106,104 +102,6 @@ job_preferences:
     - "canada only"
 
 # -----------------------------------------------------------------------------
-# Top companies — used by Claude's web searches (Part 2B in the prompt).
-# Grouped into tiers that control the scoring rules.
-# Tier 1 global  : stipend NOT required for a high score (brand name is enough)
-# Tier 2 unicorns: Indian product companies — usually pay well, relax city filter
-# Tier 3 IT      : IT services giants — brand value even if stipend is modest
-# -----------------------------------------------------------------------------
-top_companies:
-  tier1_global:
-    - "Google"
-    - "Microsoft"
-    - "Amazon"
-    - "Meta"
-    - "Apple"
-    - "Adobe"
-    - "Salesforce"
-    - "NVIDIA"
-    - "Qualcomm"
-    - "Atlassian"
-    - "Uber"
-    - "Stripe"
-    - "Databricks"
-    - "Snowflake"
-    - "Palantir"
-    - "Goldman Sachs"
-    - "JPMorgan"
-    - "Bloomberg"
-    - "Morgan Stanley"
-    - "SAP Labs"
-    - "Cisco"
-    - "IBM"
-    - "Intel"
-    - "Oracle"
-    - "VMware"
-    - "Samsung R&D"
-    - "Dell Technologies"
-    - "Arista Networks"
-    - "Rubrik"
-    - "Coinbase"
-    - "Airbnb"
-    - "Tower Research"
-    - "Media.net"
-  tier2_india_unicorns:
-    - "Razorpay"
-    - "CRED"
-    - "Flipkart"
-    - "Meesho"
-    - "PhonePe"
-    - "Groww"
-    - "Zomato"
-    - "Swiggy"
-    - "Zepto"
-    - "Freshworks"
-    - "Zoho"
-    - "InMobi"
-    - "Postman"
-    - "BrowserStack"
-    - "Juspay"
-    - "Paytm"
-    - "Nykaa"
-    - "Upstox"
-    - "CoinDCX"
-    - "ShareChat"
-    - "Dream11"
-    - "Sprinklr"
-    - "Rippling"
-    - "Myntra"
-    - "Urban Company"
-    - "Ola"
-    - "Cars24"
-    - "PolicyBazaar"
-    - "BlackBuck"
-    - "Porter"
-    - "Observe.AI"
-    - "Sarvam AI"
-    - "Krutrim"
-    - "Graviton"
-    - "Walmart Global Tech"
-    - "Intuit"
-    - "PayPal"
-    - "ServiceNow"
-    - "Twilio"
-  tier3_it_services:
-    - "TCS"
-    - "Infosys"
-    - "Wipro"
-    - "Accenture"
-    - "Cognizant"
-    - "Capgemini"
-    - "Deloitte"
-    - "LTIMindtree"
-    - "HCLTech"
-    - "Tech Mahindra"
-    - "Persistent Systems"
-    - "Mu Sigma"
-    - "Fractal Analytics"
-    - "Tiger Analytics"
-
-# -----------------------------------------------------------------------------
 # Search keywords — each keyword triggers one actor run per enabled source
 # Keep to 3–4 to avoid excessive Apify compute cost
 # -----------------------------------------------------------------------------
@@ -215,14 +113,6 @@ search:
     - "machine learning intern India"
     - "full stack developer intern India"
   max_results_per_actor: 30   # keep low to stay within $5 free tier
-
-  # Optional: company-specific LinkedIn keyword searches.
-  # Each entry triggers one extra LinkedIn Jobs actor run (~$0.01 each).
-  # Keep this list short. Claude's web searches cover these for free.
-  company_keywords:
-    - "Google software intern India"
-    - "Microsoft software intern India"
-    - "Goldman Sachs technology intern India"
 
   # Internshala is category-based (not keyword). These map to its job_category field.
   internshala_categories:
@@ -244,7 +134,7 @@ apify_actors:
     # $1.00/1K — "urls" field (plain URL strings) injected by job_finder.py
     actor_id: "curious_coder/linkedin-jobs-scraper"
     input_template:
-      count: 50            # increased from 25 — LinkedIn Jobs costs ~$0.01/25 results
+      count: 25           # reduced from 50 to 25 — LinkedIn Jobs costs ~$0.01/25 results
       scrapeCompany: true
       splitByLocation: false
 
@@ -254,7 +144,7 @@ apify_actors:
     # Input: "query" injected by job_finder.py
     actor_id: "apimaestro/linkedin-posts-search-scraper-no-cookies"
     input_template:
-      count: 50            # increased from 20 — free actor, no cost penalty
+      count: 20          # reduced from 50 to 20 — free actor, no cost penalty
 
   indeed:
     enabled: true
