@@ -74,6 +74,13 @@ resume_path: "Dantuluri Surya Narayana Raju 23BCS071.pdf"
 job_preferences:
   type: "internship"               # internship | full-time
   paid_only: true
+  # Pay floors. Full-time roles are judged on annual pay, internships on the stipend.
+  min_lpa: 9                     # below this a full-time job is marked low pay
+  target_lpa: 12                 # what you are aiming for
+  # Internships use the same floor annualised (9 LPA = 75,000 a month). To accept
+  # lower-paid internships, uncomment and set a monthly figure:
+  # min_stipend_per_month: 40000
+  levels: [Intern, Entry]        # levels to rank highest
   preferred_locations:
     - "Remote"
     - "Hyderabad"

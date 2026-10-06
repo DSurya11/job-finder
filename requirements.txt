@@ -1,2 +1,10 @@
 httpx
 pyyaml
+beautifulsoup4
+requests
+fastapi
+uvicorn[standard]
+playwright
+python-dotenv
+pytest
+anthropic
