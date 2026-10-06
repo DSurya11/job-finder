@@ -1,0 +1,680 @@
+# Companies that hire engineers in India. `python -m jobfinder discover seeds.txt --write`
+# probes each against the public job-board APIs. Add a line to track a new company;
+# optional slug hints go after a pipe.
+
+# ── India-born product companies ──
+Razorpay | razorpaysoftwareprivatelimited
+CRED | cred
+Meesho | meesho
+Groww | groww
+PhonePe | phonepe
+Postman | postman
+Freshworks | freshworks
+Zepto | zepto
+Zomato | zomato
+Blinkit | blinkit
+Swiggy
+Flipkart | flipkart
+Myntra | myntra
+Paytm | paytm
+Ola | olacabs
+Ola Electric | olaelectric
+Rapido | rapido
+Dream11 | dream11, dreamsports
+Unacademy | unacademy
+upGrad | upgrad
+PhysicsWallah | physicswallah, pw
+Lenskart | lenskart
+Nykaa | nykaa
+Urban Company | urbancompany
+Dunzo | dunzo
+ShareChat | sharechat
+Dailyhunt | dailyhunt, verse
+InMobi | inmobi
+Glance | glance
+Juspay | juspay
+Zerodha | zerodha
+Upstox | upstox
+Jupiter | jupiter, jupitermoney
+Slice | slice, sliceit
+Fi Money | epifi, fi
+Navi | navi
+BharatPe | bharatpe
+Pine Labs | pinelabs
+Cashfree | cashfree
+PayU | payu
+Khatabook | khatabook
+OkCredit | okcredit
+Open Financial | open, bankopen
+Rupeek | rupeek
+smallcase | smallcase
+INDmoney | indmoney
+CoinDCX | coindcx
+CoinSwitch | coinswitch
+Polygon | polygon, polygonlabs, polygontechnology
+Acko | acko
+Digit Insurance | godigit, digit
+PolicyBazaar | policybazaar
+Cars24 | cars24
+Spinny | spinny
+CarDekho | cardekho, girnarsoft
+Delhivery | delhivery
+Shiprocket | shiprocket
+Porter | porter, theporter
+BlackBuck | blackbuck
+Rivigo | rivigo
+Udaan | udaan
+Moglix | moglix
+OfBusiness | ofbusiness
+Zetwerk | zetwerk
+Infra.Market | inframarket
+Licious | licious
+BigBasket | bigbasket
+Country Delight | countrydelight
+Curefit | curefit, cultfit
+HealthifyMe | healthifyme
+PharmEasy | pharmeasy
+Tata 1mg | 1mg, tata1mg
+Practo | practo
+Innovaccer | innovaccer
+MakeMyTrip | makemytrip
+ixigo | ixigo
+OYO | oyo, oyorooms
+Cleartrip | cleartrip
+NoBroker | nobroker
+Housing.com | housing
+Square Yards | squareyards
+Zoho | zoho
+Chargebee | chargebee
+BrowserStack | browserstack
+Druva | druva
+Icertis | icertis
+MoEngage | moengage
+CleverTap | clevertap
+WebEngage | webengage
+Whatfix | whatfix
+Darwinbox | darwinbox
+LeadSquared | leadsquared
+Zenoti | zenoti
+Mindtickle | mindtickle
+Gupshup | gupshup
+Exotel | exotel
+Hasura | hasura
+Atlan | atlan
+Sprinklr
+Fractal Analytics | fractal
+Tiger Analytics | tigeranalytics
+Mu Sigma | musigma
+LatentView | latentview
+Sigmoid | sigmoid
+Quantiphi | quantiphi
+Tredence | tredence
+Yellow.ai | yellowai, yellowmessenger
+Haptik | haptik
+Observe.AI | observeai
+Uniphore | uniphore
+Sarvam AI | sarvam
+Krutrim | krutrim
+Rocketlane | rocketlane
+Zluri | zluri
+Hevo Data | hevodata, hevo
+Atomicwork | atomicwork
+Scaler | scaler, interviewbit
+Newton School | newtonschool
+Masai | masaischool
+HackerRank | hackerrank
+HackerEarth | hackerearth
+Turing | turing
+Toplyne | toplyne
+Plum | plum, plumhq
+Zolve | zolve
+Kreditbee | kreditbee
+MoneyView | moneyview
+Lendingkart | lendingkart
+Perfios | perfios
+M2P Fintech | m2pfintech, m2p
+Setu | setu
+Decentro | decentro
+Signzy | signzy
+IDfy | idfy
+Bureau | bureau
+Simpl | simpl, getsimpl
+ZestMoney | zestmoney
+Dhan | dhan, raiseddhan
+Angel One | angelone
+5paisa | 5paisa
+Scapia | scapia
+Kuku FM | kukufm
+Pocket FM | pocketfm
+Josh Talks | joshtalks
+MPL | mpl, mobilepremierleague
+WinZO | winzo
+Zupee | zupee
+Games24x7 | games24x7
+Nazara | nazara
+Ather Energy | atherenergy, ather
+Bounce | bounce
+Yulu | yulu
+Exponent Energy | exponentenergy
+Agnikul | agnikul
+Skyroot | skyroot
+Pixxel | pixxel
+Ultrahuman | ultrahuman
+boAt | boat, boatlifestyle
+Noise | noise, gonoise
+Mamaearth | mamaearth, honasa
+Purplle | purplle
+FirstCry | firstcry
+Pepperfry | pepperfry
+Livspace | livspace
+Vedantu | vedantu
+BYJU'S | byjus
+Cuemath | cuemath
+Eruditus | eruditus, emeritus
+Teachmint | teachmint
+LEAD School | leadschool
+ClassPlus | classplus
+Apna | apna, apnaco
+Awign | awign
+Springworks | springworks
+Keka | keka
+RazorpayX
+Zeta | zeta
+Tekion | tekion
+Nutanix | nutanix
+Rubrik | rubrik
+Cohesity | cohesity
+Druva
+ThoughtSpot | thoughtspot
+Harness | harness
+Postman
+Sigmoid
+Netradyne | netradyne
+Locus | locus, locussh
+Shadowfax | shadowfax
+Ecom Express | ecomexpress
+ElasticRun | elasticrun
+Vymo | vymo
+Capillary | capillary, capillarytech
+Simplilearn | simplilearn
+Great Learning | greatlearning
+Park+ | parkplus
+Stashfin | stashfin
+Smallest AI | smallestai
+Sprinto | sprinto
+SuperOps | superops
+Facilio | facilio
+Kissflow | kissflow
+Freshprints | freshprints
+Fampay | fampay
+Groyyo
+Onsurity | onsurity
+Even Healthcare | even
+Qure.ai | qure, qureai
+Niramai | niramai
+SigTuple | sigtuple
+Ninjacart | ninjacart
+DeHaat | dehaat
+AgroStar | agrostar
+WayCool | waycool
+Stellapps | stellapps
+
+# ── Global tech with India engineering ──
+Coinbase | coinbase
+Figma | figma
+Stripe | stripe
+Airbnb | airbnb
+Databricks | databricks
+Snowflake | snowflake
+Confluent | confluent
+MongoDB | mongodb
+Elastic | elastic
+Twilio | twilio
+Okta | okta
+Cloudflare | cloudflare
+Datadog | datadog
+HashiCorp | hashicorp
+GitLab | gitlab
+GitHub | github
+DigitalOcean | digitalocean
+Dropbox | dropbox
+Box | boxinc
+Slack | slack
+Zoom | zoom
+Notion | notion
+Canva | canva
+Airtable | airtable
+Asana | asana
+Atlassian
+Miro | miro, realtimeboardglobal
+Grammarly | grammarly
+Duolingo | duolingo
+Pinterest | pinterest, pinterestcareers
+Reddit | reddit
+Snap | snap, snapchat
+Twitter | twitter
+Uber | uber
+Lyft | lyft
+DoorDash | doordash, doordashusa
+Instacart | instacart
+Grab | grab
+Gojek | gojek
+Agoda | agoda
+Booking.com | bookingcom
+Expedia | expedia
+Rippling | rippling
+Deel | deel
+Remote | remotecom, remote
+Gusto | gusto
+Brex | brex
+Ramp | ramp
+Plaid | plaid
+Chime | chime
+Robinhood | robinhood
+Affirm | affirm
+Block | block, square
+Wise | wise, transferwise
+Revolut | revolut
+Nubank | nubank
+Tide | tide
+Airwallex | airwallex
+Checkout.com | checkout
+Adyen | adyen
+Marqeta | marqeta
+Toast | toast
+Flexport | flexport
+Samsara | samsara
+Verkada | verkada
+Rubrik
+Cohesity
+Nutanix
+Pure Storage | purestorage
+NetApp | netapp
+Commvault | commvault
+Zscaler | zscaler
+CrowdStrike | crowdstrike
+SentinelOne | sentinelone
+Netskope | netskope
+Palo Alto Networks
+Fortinet | fortinet
+Akamai | akamai
+Fastly | fastly
+Arista Networks | aristanetworks
+Juniper Networks | juniper
+Qualys | qualys
+Tenable | tenable
+Rapid7 | rapid7
+Snyk | snyk
+Wiz | wiz, wizinc
+1Password | 1password
+New Relic | newrelic
+Dynatrace | dynatrace
+Splunk | splunk
+PagerDuty | pagerduty
+Sumo Logic | sumologic
+Grafana Labs | grafanalabs
+Postman
+Kong | kong
+Redis | redis
+Couchbase | couchbase
+Cockroach Labs | cockroachlabs
+SingleStore | singlestore
+Yugabyte | yugabyte
+ClickHouse | clickhouse
+Starburst | starburst
+dbt Labs | dbtlabsinc, dbtlabs
+Fivetran | fivetran
+Airbyte | airbyte
+Sigma Computing | sigmacomputing
+ThoughtSpot
+Amplitude | amplitude
+Mixpanel | mixpanel
+Segment | segment
+Braze | braze
+Iterable | iterable
+HubSpot | hubspot
+Intercom | intercom
+Zendesk | zendesk
+Freshworks
+Gong | gong
+Outreach | outreach
+Salesloft | salesloft
+ZoomInfo | zoominfo
+Calendly | calendly
+Typeform | typeform
+Webflow | webflow
+Vercel | vercel
+Netlify | netlify
+Supabase | supabase
+PlanetScale | planetscale
+Render | render
+Retool | retool
+Postman
+OpenAI | openai
+Anthropic | anthropic
+Cohere | cohere
+Scale AI | scaleai
+Glean | gleanwork, glean
+Perplexity | perplexity, perplexityai
+Sierra | sierra
+Harvey | harvey
+Cursor | anysphere, cursor
+Replit | replit
+ElevenLabs | elevenlabs
+Mistral | mistral
+Together AI | togetherai
+LangChain | langchain
+Pinecone | pinecone
+Weaviate | weaviate
+Nvidia
+Qualcomm
+Intel
+AMD | amd
+Arm | arm
+Marvell | marvell
+Micron
+Texas Instruments | ti
+Analog Devices
+NXP
+Synopsys | synopsys
+Cadence
+Applied Materials | appliedmaterials
+Lam Research | lamresearch
+Western Digital | westerndigital
+Seagate | seagate
+SiFive | sifive
+Rivos | rivos
+Astera Labs | asteralabs
+Tesla | tesla
+Rivian | rivian
+Waymo | waymo
+Cruise | cruise
+Motive | gomotive, motive
+Nuro | nuro
+Zoox | zoox
+SpaceX | spacex
+Roku | roku
+Sonos | sonos
+Spotify | spotify
+Netflix | netflix
+Disney | disney
+Warner Bros Discovery | wbd
+Electronic Arts | ea, electronicarts
+Zynga | zynga
+Unity | unity
+Epic Games | epicgames
+Riot Games | riotgames
+Roblox | roblox
+Scopely | scopely
+Yahoo | yahoo
+eBay | ebay
+Etsy | etsy
+Wayfair | wayfair
+Shopify | shopify
+Target | target
+Walmart Global Tech
+Lowe's India | lowes
+Tesco | tesco
+Wayfair
+Chewy | chewy
+Carvana | carvana
+Opendoor | opendoor
+Zillow | zillow
+Compass | compass
+ServiceNow
+Workday
+Salesforce
+Adobe
+Oracle
+SAP
+Intuit | intuit
+Autodesk
+VMware | vmware
+Citrix | citrix
+Informatica | informatica
+Teradata | teradata
+Cloudera | cloudera
+Nasdaq
+Visa
+Mastercard
+PayPal
+American Express
+JPMorgan Chase
+Goldman Sachs
+Morgan Stanley
+Deutsche Bank
+Barclays | barclays
+Citi | citi
+Wells Fargo | wellsfargo
+Bank of America | bankofamerica
+HSBC | hsbc
+Standard Chartered | standardchartered
+UBS | ubs
+Nomura | nomura
+BlackRock
+Fidelity
+State Street
+Northern Trust | northerntrust
+Citadel | citadel
+Citadel Securities
+Jane Street | janestreet
+Tower Research | towerresearchcapital, tower-research
+Optiver | optiverus, optiver
+DE Shaw
+Two Sigma | twosigma
+Hudson River Trading | wehrtyou, hudsonrivertrading
+Jump Trading | jumptrading
+IMC Trading | imc
+DRW | drweng, drw
+Quadeye | quadeye
+Graviton Research | gravitonresearchcapital, graviton
+AlphaGrep | alphagrep
+NK Securities | nksecurities
+iRage | irage
+Squarepoint | squarepointcapital
+Millennium | millennium
+WorldQuant | worldquant
+Arcesium | arcesium
+Sprinklr
+Media.net | medianet
+Directi | directi
+Flock | flock
+Zeta
+Radix | radix
+Thoughtworks | thoughtworks
+Publicis Sapient | publicissapient
+EPAM | epam
+Nagarro | nagarro
+GlobalLogic | globallogic
+Persistent | persistent
+LTIMindtree | ltimindtree
+Mphasis | mphasis
+Coforge | coforge
+Hexaware | hexaware
+Cyient | cyient
+Tata Elxsi | tataelxsi
+KPIT | kpit
+Sasken | sasken
+Happiest Minds | happiestminds
+Zensar | zensar
+Birlasoft | birlasoft
+Virtusa | virtusa
+UST | ust
+Altimetrik | altimetrik
+Incedo | incedo
+Infogain | infogain
+Xoriant | xoriant
+GlobalData | globaldata
+Bosch | boschgroup
+Siemens | siemens
+Continental | continental
+Mercedes-Benz R&D India | mbrdi, mercedesbenzrdi
+ABB | abb
+Schneider Electric | schneiderelectric
+Honeywell | honeywell
+Philips
+GE HealthCare
+Medtronic
+Stryker
+Boeing | boeing
+Airbus | airbus
+Rolls-Royce | rollsroyce
+Shell | shell
+Maersk | maersk
+Ikea | ikea
+H&M | hm
+Sixt | sixt
+Delivery Hero | deliveryhero
+Zalando | zalando
+Trivago | trivago
+N26 | n26
+Klarna | klarna
+Spotnana | spotnana
+Whatnot | whatnot
+Clari | clari
+Highspot | highspot
+Seismic | seismic
+Coupa | coupa
+Anaplan | anaplan
+Blackhawk Network | blackhawknetwork
+Guidewire | guidewire
+Epsilon | epsilon
+Nielsen | nielsen
+Sabre
+Amadeus | amadeus
+Egencia | egencia
+Navan | navan, tripactions
+Uplers | uplers
+Turing
+Andela | andela
+Toptal | toptal
+Crossover | crossover
+Smartsheet | smartsheet
+Coursera | coursera
+Udemy | udemy
+Chegg | chegg
+Quizlet | quizlet
+Khan Academy | khanacademy
+Postman
+Druva
+Zuora | zuora
+Nextdoor | nextdoor
+Yelp | yelp
+Poshmark | poshmark
+Thumbtack | thumbtack
+Faire | faire
+Rubrik
+Sprig
+Moveworks | moveworks
+Sprinklr
+Uniphore
+Eightfold | eightfoldai, eightfold
+Phenom | phenompeople, phenom
+BetterUp | betterup
+Lattice | lattice
+Culture Amp | cultureamp
+Postscript | postscript
+Sendbird | sendbird
+Stream | getstream, stream
+Agora | agora
+Twilio
+Truecaller | truecaller
+Bolt | bolt
+Careem | careem
+Noon | noon
+Tabby | tabby
+Tamara | tamara
+Talabat | talabat
+Thoughtspot
+Zinnia | zinnia
+Aurigo | aurigo
+Model N | modeln
+Kyndryl | kyndryl
+Bazaarvoice | bazaarvoice
+Sprinklr
+Egnyte | egnyte
+Skyflow | skyflow
+Postman
+Appsmith | appsmith
+Chargebee
+Zenskar | zenskar
+Fyle | fyle
+Clear | clear, cleartax
+Volopay | volopay
+Kredx | kredx
+Recur Club | recurclub
+GoKwik | gokwik
+Shopflo | shopflo
+Bizongo | bizongo
+Vayana | vayana
+Jar | jar, changejar
+Stable Money | stablemoney
+Wint Wealth | wintwealth
+Groww
+Kotak811
+Niyo | niyo
+Uni Cards | uni
+OneCard | onecard, fplabs
+Leap Scholar | leapscholar, leap
+Nxtwave | nxtwave
+Interview Kickstart | interviewkickstart
+Sprinklr
+Tracxn | tracxn
+Inshorts | inshorts
+Koo | koo
+Pratilipi | pratilipi
+Kutumb | kutumb
+Lokal | lokal
+Zolo | zolo, zolostays
+Stanza Living | stanzaliving
+NestAway | nestaway
+Swish | swish
+KreditBee
+Snapmint | snapmint
+Urban Ladder | urbanladder
+The Souled Store | thesouledstore
+Bewakoof | bewakoof
+Sugar Cosmetics | sugarcosmetics
+Wakefit | wakefit
+Atomberg | atomberg
+Blusmart | blusmart
+Chalo | chalo
+Vahan | vahan
+BetterPlace | betterplace
+Leena AI | leenaai
+Sprinklr
+Wingify | wingify
+Hike | hike
+Meragi | meragi
+Battery Smart | batterysmart
+Zypp | zypp
+Log9 | log9
+ideaForge | ideaforge
+Detect Technologies | detecttechnologies
+CynLr | cynlr
+Mad Street Den | madstreetden
+Vue.ai | vueai
+Entropik | entropik
+Locobuzz | locobuzz
+Pando | pando
+FarEye | fareye
+LogiNext | loginext
+Increff | increff
+Unicommerce | unicommerce
+Vinculum | vinculum
+Browserstack
+LambdaTest | lambdatest
+Testsigma | testsigma
+BrowserStack
+Hackerrank
+CodeSignal | codesignal
+Sourcegraph | sourcegraph
+JetBrains | jetbrains
+Docker | docker
+Red Hat
+SUSE | suse
+Canonical | canonical
+Mozilla | mozilla
+Automattic | automattic
+Wikimedia | wikimedia
+Postman

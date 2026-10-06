@@ -47,7 +47,12 @@ def _normalise(job: dict) -> dict:
     desc = job.get("description", "")
     basic = job.get("basic_qualifications", "")
     pref = job.get("preferred_qualifications", "")
-    full_desc = f"{desc}\\n{basic}\\n{pref}"
+    # HTML with section headings; jobfinder.enrich.html_to_text turns it into text.
+    full_desc = desc
+    if basic:
+        full_desc += f"<h3>Basic qualifications</h3>{basic}"
+    if pref:
+        full_desc += f"<h3>Preferred qualifications</h3>{pref}"
 
     emp_type = job.get("job_schedule_type", "").title()
     if "full-time" in emp_type.lower() or "full time" in emp_type.lower():
