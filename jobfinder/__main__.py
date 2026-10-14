@@ -66,7 +66,9 @@ def main() -> None:
         profile = score.load_profile()
         import json
         rows = conn.execute("SELECT * FROM jobs").fetchall()
-        for row in rows:
+        for n, row in enumerate(rows, 1):
+            if n % 500 == 0:
+                conn.commit()       # in batches, so the web app can still save while this runs
             job = db.job_to_dict(row)
             pay.apply_band(job)
             job["pay_verdict"] = pay.judge(job, profile)
@@ -81,10 +83,10 @@ def main() -> None:
     elif args.cmd == "health":
         from . import db, pipeline
         conn = db.connect()
-        last = conn.execute("SELECT MAX(run_id) AS r FROM company_runs").fetchone()["r"]
-        rows = conn.execute("SELECT * FROM company_runs WHERE run_id=? ORDER BY india_count", (last,))
-        for r in rows:
+        for r in reversed(db.latest_company_runs(conn)):
             status = pipeline.health_status(bool(r["ok"]), r["raw_count"], r["india_count"], None)
+            if r["ats"] == "custom":
+                status = "manual"           # no scraper for this site: the same label the app uses
             if status != "ok":
                 print(f"[{status:6}] {r['company']:28} {r['ats']:16} {r['error'] or '0 postings'}")
 

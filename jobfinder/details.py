@@ -34,7 +34,9 @@ async def _workday(client: httpx.AsyncClient, url: str) -> dict:
     info = resp.json().get("jobPostingInfo") or {}
     locations = [info.get("location") or ""] + list(info.get("additionalLocations") or [])
     country = (info.get("country") or {}).get("descriptor")
-    if country:
+    # The country settles "is this in India" for a location that is only a site code.
+    # Where a location already names it, adding it again just reads "Pune, India; India".
+    if country and not any(country.lower() in x.lower() for x in locations):
         locations.append(country)
     return {
         "description_html": info.get("jobDescription") or "",

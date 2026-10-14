@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { SPRING } from "./fx";
 import { item, stagger } from "./Inspector";
 import Description from "./Description";
 import { fetchJob, setState, type Job } from "./api";
-import { STATUS, TONE, expOf, payOf, timeAgo } from "./ui";
+import { STATUS, TONE, expOf, payOf, tidyPlace, timeAgo } from "./ui";
 
 // Job details are cached so stepping back and forth is instant, and the row after
 // the cursor is fetched ahead of time.
@@ -30,11 +30,13 @@ function Fact({ name, children }: { name: string; children: React.ReactNode }) {
   );
 }
 
-export default function Detail({ id, picked, onPick, onClose, onChanged }: {
-  id: string; picked: boolean; onPick: () => void; onClose: () => void; onChanged: (job: Job) => void;
+export default function Detail({ id, status: listed, picked, onPick, onClose, onChanged }: {
+  id: string; status?: string | null; picked: boolean; onPick: () => void; onClose: () => void; onChanged: (job: Job) => void;
 }) {
   const [job, setJob] = useState<Job | null>(null);
   const [notes, setNotes] = useState("");
+  // The status on screen when a status button was pressed (undefined: no press under way).
+  const pressed = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let live = true;
@@ -51,21 +53,27 @@ export default function Detail({ id, picked, onPick, onClose, onChanged }: {
     );
   }
 
-  const mark = async (status: string) => {
-    const next = job.status === status ? "" : status;
-    await setState(job.id, { status: next, notes });
-    const updated = { ...job, status: next || null };
-    cache.set(job.id, Promise.resolve(updated));
+  // The table row holds the status: a shortcut key changes it there, not here.
+  const status = listed === undefined ? job.status : listed;
+  const commit = (updated: Job) => {
+    cache.set(updated.id, Promise.resolve(updated));
     setJob(updated);
     onChanged(updated);
+  };
+  const mark = async (key: string) => {
+    // Pressing a button takes focus from the notes, which saves them and shortlists an
+    // untracked job before the click lands. The click acts on what was on screen when
+    // the button was pressed, so it does not undo that.
+    const was = pressed.current === undefined ? status : pressed.current;
+    pressed.current = undefined;
+    const next = was === key ? "" : key;
+    await setState(job.id, { status: next, notes });
+    commit({ ...job, notes, status: next || null });
   };
   const saveNotes = async () => {
     if (notes === (job.notes ?? "")) return;
     await setState(job.id, { notes });
-    const updated = { ...job, notes, status: job.status ?? "saved" };
-    cache.set(job.id, Promise.resolve(updated));
-    setJob(updated);
-    onChanged(updated);
+    commit({ ...job, notes, status: status ?? "saved" });      // a first note shortlists the job
   };
 
   const pay = payOf(job);
@@ -88,11 +96,12 @@ export default function Detail({ id, picked, onPick, onClose, onChanged }: {
           {Object.entries(STATUS).map(([key, s]) => (
             <motion.button
               key={key} onClick={() => mark(key)} whileTap={{ scale: 0.95 }} transition={SPRING}
+              onPointerDown={() => { pressed.current = status; }} onPointerLeave={() => { pressed.current = undefined; }}
               className={`relative h-9 rounded-[4px] border px-3 text-[13px] transition-colors ${
-                job.status === key ? "border-ink text-paper" : "border-rule text-soft hover:text-ink"
+                status === key ? "border-ink text-paper" : "border-rule text-soft hover:text-ink"
               }`}
             >
-              {job.status === key && <motion.span layoutId="status-pill" className="absolute inset-0 rounded-[2px] bg-ink" transition={SPRING} />}
+              {status === key && <motion.span layoutId="status-pill" className="absolute inset-0 rounded-[2px] bg-ink" transition={SPRING} />}
               <span className="relative">{key === "saved" ? "Shortlist" : s.label}</span>
             </motion.button>
           ))}
@@ -133,12 +142,12 @@ export default function Detail({ id, picked, onPick, onClose, onChanged }: {
             )}
             {pay.text === "—" && <span className="block text-[12px] text-soft">Not in the posting, and nothing to estimate from.</span>}
           </Fact>
-          <Fact name="Location">{job.location || "—"}</Fact>
+          <Fact name="Location">{tidyPlace(job.location) || "—"}</Fact>
           {job.others && job.others.length > 0 && (
             <Fact name="Also open">
               <span className="text-soft">{job.others.length} more posting{job.others.length > 1 ? "s" : ""} with this title: </span>
               {job.others.slice(0, 12).map((o, i) => (
-                <span key={o.id}>{i > 0 && ", "}<a href={o.apply_url} target="_blank" rel="noopener" className="underline underline-offset-2">{o.location || "posting"}</a></span>
+                <span key={o.id}>{i > 0 && " · "}<a href={o.apply_url} target="_blank" rel="noopener" className="underline underline-offset-2">{tidyPlace(o.location) || "posting"}</a></span>
               ))}
             </Fact>
           )}

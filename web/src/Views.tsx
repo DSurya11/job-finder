@@ -40,7 +40,7 @@ export function CoverageView({ version }: { version: number }) {
               <td className="px-3 text-soft">{c.ats}</td>
               <td className={`px-3 ${STATUS_TONE[c.status]}`}>{c.status}</td>
               <td className="num px-3 text-right">{c.india.toLocaleString("en-IN")}</td>
-              <td className="num px-3 text-right text-faint">{c.previous ?? "—"}</td>
+              <td className="num px-3 text-right text-faint">{c.previous?.toLocaleString("en-IN") ?? "—"}</td>
               <td className="num px-3 text-right text-faint">{c.raw.toLocaleString("en-IN")}</td>
               <td className="max-w-[260px] truncate px-3 text-soft">{c.error}</td>
             </tr>

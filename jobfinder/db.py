@@ -47,7 +47,8 @@ CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(is_active, score);
 
 CREATE TABLE IF NOT EXISTS user_state (
     job_id TEXT PRIMARY KEY,
-    status TEXT NOT NULL,        -- saved | applied | interview | offer | rejected | hidden
+    status TEXT NOT NULL,        -- saved | applied | interview | offer | rejected | hidden,
+                                 -- or '' for a job that only has a note
     notes TEXT DEFAULT '',
     updated_at TEXT
 );
@@ -93,6 +94,16 @@ JOB_COLUMNS = [
 
 def now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def ago(shift: str = "?") -> str:
+    """SQL for the moment `shift` from now (a quoted modifier such as "'-1 day'", or
+    ? to bind one), written the way now() stores timestamps.
+
+    SQLite's own datetime() puts a space where these have a "T", so comparing a
+    stored timestamp with it as text is wrong for the whole day of the cutoff.
+    """
+    return f"strftime('%Y-%m-%dT%H:%M:%SZ', 'now', {shift})"
 
 
 _READY: set[str] = set()
@@ -189,6 +200,19 @@ def close_missing(conn: sqlite3.Connection, company: str, seen_at: str) -> int:
         (company, seen_at),
     )
     return cur.rowcount
+
+
+def latest_company_runs(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Each company's most recent fetch result, largest first.
+
+    Not "the rows of the latest run": a run limited to some companies (`run --only`)
+    or one cut short only has rows for those, and the rest keep their last result.
+    """
+    return conn.execute(
+        "SELECT * FROM company_runs c WHERE run_id = ("
+        "SELECT MAX(run_id) FROM company_runs WHERE company = c.company) "
+        "ORDER BY india_count DESC"
+    ).fetchall()
 
 
 def previous_counts(conn: sqlite3.Connection) -> dict[str, int]:

@@ -34,7 +34,7 @@ To refresh every morning at 7:00, add this to `crontab -e`:
 - **Table** — one 36px row per job: fit score, company, title, location, pay, posted, source, status. Click Fit, Company, Pay or Posted to sort. The bar under the table sets rows per page (25, 50, 100 or 200, remembered) and has First, Previous, Next and Last; `n` and `p` also change page. The same title at the same company and level is shown once with a count (`×4`); the job card lists the other postings.
 - **Top bar** — search (title, company and place, matching from the start of a word) and filter menus: Level, Role, City, Pay, Posted, Company, More.
 - **Job card** — click a row and the card unfolds out of it, centred over the table: the description laid out with its section headings and bullet lists, the reasons behind the fit score, where the pay figure comes from, the Apply link, status buttons and notes. `esc` or a click outside closes it; `j` / `k` step to the next job with the card open.
-- **Coverage** — one row per company with what the last run returned. Anything that failed, came back empty, or dropped sharply against the previous run is flagged.
+- **Coverage** — one row per company with what its last fetch returned. Anything that failed, came back empty, or dropped sharply against the time before is flagged. A run limited to some companies (`run --only`) updates those rows and leaves the rest.
 - **Copy Claude prompt** — press `c` on a few jobs and the bar at the bottom copies a prompt with your profile and those descriptions.
 
 Motion comes from open component libraries (Magic UI's number ticker and blur fade, Motion Primitives' animated background), adapted in `web/src/fx/`. The job card's open and close (`web/src/Inspector.tsx`) follow the story inspector in the tachyon-news project. It animates transform and opacity only and respects the system's reduced-motion setting.
@@ -126,7 +126,7 @@ Edit the entry in `companies.yaml` to change `keywords`, `max_pages` or `posted_
 ## What it does not cover
 
 - **Naukri** requires a captcha for every search, so it is not scraped.
-- **Sites behind bot protection or with no listings page.** Citadel Securities sits behind a Cloudflare challenge; Zomato (Eternal) hires by email; Walmart, SAP, Zerodha and American Express need bespoke work. These are `ats: custom` and appear under *manual* on the Coverage tab with a link to check by hand.
+- **Sites behind bot protection or with no listings page.** Citadel Securities shows its first ten openings, but every further page and filter goes through a request Cloudflare blocks, even from a real browser; Zomato (Eternal) hires only through employee referrals and lists no openings. These are `ats: custom` and appear under *manual* on the Coverage tab with a link to check by hand.
 - **Companies not in `companies.yaml`.** LinkedIn and Internshala catch many of them, but only for the configured keywords.
 - **Salary**, for most jobs. It is shown only when the posting states it, which few India postings do. Internshala stipends are the main exception.
 

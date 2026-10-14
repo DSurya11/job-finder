@@ -219,7 +219,11 @@ def apply_cached(conn, profile: dict | None = None) -> int:
         "SELECT * FROM jobs WHERE is_active=1 AND salary_max_lpa IS NULL "
         "AND COALESCE(est_source, 'band') != 'claude'"
     ).fetchall()
-    for row in rows:
+    for n, row in enumerate(rows, 1):
+        if n % 500 == 0:
+            # In batches: one transaction over every job would hold the write lock for the
+            # whole pass, and the web app could not save a status or a note meanwhile.
+            conn.commit()
         job = db.job_to_dict(row)
         for designation in designations(job):
             record = cache.get((job["company"], designation))

@@ -18,6 +18,7 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
+from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup
@@ -30,11 +31,11 @@ HTML_HEADERS = {"User-Agent": UA, "Accept": "text/html,application/xhtml+xml",
                 "Accept-Language": "en-IN,en;q=0.9"}
 
 
-async def _get(client: httpx.AsyncClient, url: str, *, params=None, tries: int = 4,
-               pause: float = 4.0) -> httpx.Response:
+async def _get(client: httpx.AsyncClient, url: str, *, params=None, headers=HTML_HEADERS,
+               tries: int = 4, pause: float = 4.0) -> httpx.Response:
     """GET with backoff on throttling."""
     for attempt in range(tries):
-        resp = await client.get(url, params=params, headers=HTML_HEADERS, timeout=40)
+        resp = await client.get(url, params=params, headers=headers, timeout=40)
         if resp.status_code in (429, 999, 502, 503) and attempt < tries - 1:
             await asyncio.sleep(pause * (attempt + 1))
             continue
@@ -282,12 +283,12 @@ async def pcsx(client: httpx.AsyncClient, co: dict) -> list[dict]:
     host, domain = co["host"], co["domain"]
     out, start, total = [], 0, None
     while True:
-        resp = await client.get(
-            f"https://{host}/api/pcsx/search",
+        # With backoff: Microsoft answers 429 when two runs come close together.
+        resp = await _get(
+            client, f"https://{host}/api/pcsx/search",
             params={"domain": domain, "query": "", "location": "India", "start": start},
-            headers={"User-Agent": UA}, timeout=40,
+            headers={"User-Agent": UA},
         )
-        resp.raise_for_status()
         data = resp.json().get("data") or {}
         rows = data.get("positions") or []
         total = total if total is not None else (data.get("count") or 0)
@@ -350,8 +351,11 @@ async def turbohire(client: httpx.AsyncClient, co: dict) -> list[dict]:
     return out
 
 
-# ── Uber (needs a real browser: paging happens client-side) ──────────────────
+# ── Uber (needs a real browser: the list is rendered client-side) ────────────
 
+# One country, which is two or three pages. Clicking through every office's jobs
+# (60-odd pages) was slow, and the site's bot check stopped it part-way.
+_UBER_LIST = "https://jobs.uber.com/en/jobs/?countries=India"
 _UBER_CARDS = """() => [...document.querySelectorAll("a[href*='/en/jobs/']")]
   .filter(a => /\\/jobs\\/\\d+\\/?$/.test(a.pathname))
   .map(a => [a.pathname, a.innerText.trim(),
@@ -367,52 +371,40 @@ async def uber(client: httpx.AsyncClient, co: dict) -> list[dict]:
         browser = await pw.chromium.launch()
         try:
             page = await browser.new_page(user_agent=UA, viewport={"width": 1366, "height": 900})
-            await page.goto("https://jobs.uber.com/en/jobs/", wait_until="domcontentloaded", timeout=90000)
-            await page.wait_for_selector("a[href*='/en/jobs/']", timeout=30000)
-            await page.wait_for_timeout(3000)   # let the page hydrate before clicking
-            # The cookie dialog appears a few seconds in and covers the pager.
-            consent = page.get_by_role("button", name="Essential Only")
-            try:
-                await consent.first.click(timeout=10000)
-                await page.wait_for_timeout(500)
-            except Exception:
-                pass                      # no dialog this time
-            for _ in range(200):
-                cards = await page.evaluate(_UBER_CARDS)
-                first = cards[0][0] if cards else ""
-                for path, title, text in cards:
+            url = _UBER_LIST
+            for _ in range(40):
+                await page.goto(url, wait_until="domcontentloaded", timeout=90000)
+                try:
+                    await page.wait_for_selector("a[href*='/en/jobs/']", timeout=30000)
+                except Exception:
+                    text = (await page.evaluate("document.body.innerText")).lower()
+                    if "security verification" in text or "not a bot" in text:
+                        raise RuntimeError("stopped by the site's bot check; try again later") from None
+                    if await page.locator("#job-search-skill").count():
+                        break                   # the search page, with nothing listed for India
+                    raise
+                await page.wait_for_timeout(1500)   # let the list finish rendering
+                for path, title, text in await page.evaluate(_UBER_CARDS):
                     lines = [l.strip() for l in text.split("\n")
                              if l.strip() and l.strip() != title and l.strip() not in _UBER_NOISE]
-                    url = f"https://jobs.uber.com{path}"
+                    job_url = f"https://jobs.uber.com{path}"
                     # Cards show "City, Region (+ N locations)" and then the team.
-                    out.setdefault(url, {
+                    out.setdefault(job_url, {
                         "title": title,
                         "location": re.sub(r"\s*\+\s*\d+ locations?", "", lines[0]) if lines else "",
                         "departments": lines[1] if len(lines) > 1 else "",
-                        "apply_url": url,
+                        "apply_url": job_url,
                         "detail_kind": "jsonld",
-                        "detail_url": url,
+                        "detail_url": job_url,
+                        "india_confirmed": True,
                     })
+                # The pager is plain links, so the next page is opened by address.
                 nxt = page.get_by_label("Go to next page").first
-                if not await nxt.count() or await nxt.get_attribute("aria-disabled") == "true":
+                href = await nxt.get_attribute("href") if await nxt.count() else None
+                if not href or await nxt.get_attribute("aria-disabled") == "true":
                     break
-                await page.wait_for_timeout(1200)   # the site rate-limits fast paging
-                changed = False
-                for _attempt in range(2):       # the first click is sometimes swallowed
-                    await nxt.click()
-                    for _tick in range(30):
-                        await page.wait_for_timeout(500)
-                        now = await page.evaluate(_UBER_CARDS)
-                        if now and now[0][0] != first:
-                            changed = True
-                            break
-                    if changed:
-                        break
-                if not changed:
-                    if len(out) < 100:
-                        raise RuntimeError(f"Uber paging stalled after {len(out)} jobs")
-                    logger.warning("[Uber] paging stalled after %d jobs; keeping those", len(out))
-                    break
+                url = urljoin("https://jobs.uber.com", href)
+                await page.wait_for_timeout(1500)   # the site rate-limits fast paging
         finally:
             await browser.close()
     return list(out.values())

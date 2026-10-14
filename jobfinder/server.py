@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -68,6 +69,7 @@ def order_by(sort: str, direction: str | None) -> str:
 
 
 POSTED = "COALESCE(NULLIF(j.posted_at, ''), substr(j.first_seen, 1, 10))"
+NEW_SINCE = db.ago("'-1 day'")      # "new" means first seen in the last 24 hours
 
 
 def _multi(value: str | None) -> list[str]:
@@ -126,7 +128,7 @@ def _where(
         clauses.append(f"{POSTED} >= date('now', ?)")
         args.append(f"-{int(posted_days)} days")
     if new_days:
-        clauses.append("j.first_seen >= datetime('now', ?)")
+        clauses.append(f"j.first_seen >= {db.ago()}")
         args.append(f"-{int(new_days)} days")
 
     statuses = _multi(status)
@@ -168,9 +170,10 @@ def list_jobs(
         group = "GROUP BY j.grp"
         total = conn.execute(f"SELECT COUNT(*) FROM (SELECT 1 {base} {group})", args).fetchone()[0]
         order = order_by(sort, dir)
-        if q and sort == "score" and dir != "asc":
+        terms = (q or "").split()        # a search of only spaces has no terms
+        if terms and sort == "score" and dir != "asc":
             order = "starts_word(j.company, ?) DESC, " + order      # company matches first
-            args = [*args, q.split()[0]]
+            args = [*args, terms[0]]
         rows = conn.execute(
             f"SELECT {LIST_COLUMNS}, COUNT(*) AS openings, "
             "MAX((u.status IS NOT NULL AND u.status != 'hidden') * 1000 + j.score) AS pick "
@@ -215,6 +218,8 @@ def set_state(job_id: str, body: StateIn):
         raise HTTPException(400, f"status must be one of {sorted(STATUSES)}")
     conn = db.connect()
     try:
+        if not conn.execute("SELECT 1 FROM jobs WHERE id = ?", (job_id,)).fetchone():
+            raise HTTPException(404, "job not found")
         if body.status == "hidden":
             # Dismissing a row dismisses every posting it stands for.
             conn.execute(
@@ -224,20 +229,28 @@ def set_state(job_id: str, body: StateIn):
                 "ON CONFLICT(job_id) DO UPDATE SET status='hidden', updated_at=excluded.updated_at",
                 (db.now(), job_id),
             )
-        elif body.status == "":
-            conn.execute("DELETE FROM user_state WHERE job_id = ?", (job_id,))
         else:
             current = conn.execute(
                 "SELECT status, notes FROM user_state WHERE job_id = ?", (job_id,)
             ).fetchone()
-            status = body.status or (current["status"] if current else "saved")
             notes = body.notes if body.notes is not None else (current["notes"] if current else "")
-            conn.execute(
-                "INSERT INTO user_state (job_id, status, notes, updated_at) VALUES (?,?,?,?) "
-                "ON CONFLICT(job_id) DO UPDATE SET status=excluded.status, "
-                "notes=excluded.notes, updated_at=excluded.updated_at",
-                (job_id, status, notes, db.now()),
-            )
+            if body.status is not None:
+                status = body.status
+            elif current:
+                status = current["status"]
+            else:
+                status = "saved" if notes else ""       # a first note shortlists the job
+            if status or notes:
+                # Clearing the status of a job with a note keeps the note: the row
+                # stays with an empty status rather than taking the note with it.
+                conn.execute(
+                    "INSERT INTO user_state (job_id, status, notes, updated_at) VALUES (?,?,?,?) "
+                    "ON CONFLICT(job_id) DO UPDATE SET status=excluded.status, "
+                    "notes=excluded.notes, updated_at=excluded.updated_at",
+                    (job_id, status, notes, db.now()),
+                )
+            else:
+                conn.execute("DELETE FROM user_state WHERE job_id = ?", (job_id,))
         conn.commit()
         return {"ok": True}
     finally:
@@ -279,8 +292,8 @@ def facets(
     try:
         rows = conn.execute(
             "SELECT j.grp, j.role, j.level, j.employment_type AS type, j.company, j.source, "
-            "j.pay_verdict AS pay, j.cities, j.first_seen >= datetime('now', '-1 day') AS is_new, "
-            + ("j.first_seen >= datetime('now', ?) AS in_window " if new_days else "1 AS in_window ")
+            f"j.pay_verdict AS pay, j.cities, j.first_seen >= {NEW_SINCE} AS is_new, "
+            + (f"j.first_seen >= {db.ago()} AS in_window " if new_days else "1 AS in_window ")
             + f"FROM jobs j LEFT JOIN user_state u ON u.job_id = j.id WHERE {where}",
             ([f"-{int(new_days)} days"] if new_days else []) + args,
         ).fetchall()
@@ -299,7 +312,9 @@ def facets(
             ok["pay"] = (r["pay"] in picked["pay"]) if picked["pay"] else (r["pay"] not in hidden_pay)
             failed = [name for name, passed in ok.items() if not passed]
             if not failed:
-                all_rows.add(r["grp"])
+                # "First seen within" narrows the table, so it narrows the All count too.
+                if r["in_window"]:
+                    all_rows.add(r["grp"])
                 if r["is_new"]:
                     new_rows.add(r["grp"])
             if not r["in_window"]:
@@ -319,13 +334,13 @@ def facets(
         tracker = {
             r["status"]: r["n"] for r in conn.execute(
                 "SELECT u.status, COUNT(*) AS n FROM user_state u JOIN jobs j ON j.id = u.job_id "
-                "WHERE j.is_active = 1 GROUP BY 1")
+                "WHERE j.is_active = 1 AND u.status != '' GROUP BY 1")
         }
         totals = conn.execute(
             "SELECT COUNT(*) AS jobs, COUNT(DISTINCT company) AS companies, "
             "SUM(is_tech) AS tech, SUM(salary_text != '') AS with_salary, "
             "SUM(description != '') AS with_description, "
-            "SUM(first_seen >= datetime('now', '-1 day')) AS new_today "
+            f"SUM(first_seen >= {NEW_SINCE}) AS new_today "
             "FROM jobs WHERE is_active = 1"
         ).fetchone()
         return {
@@ -341,22 +356,25 @@ def facets(
 
 @app.get("/api/coverage")
 def coverage():
-    """Per-company result of the latest run, plus companies with no scraper."""
+    """Each company's most recent fetch result, plus companies with no scraper."""
     conn = db.connect()
     try:
-        last = conn.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 1").fetchone()
-        if not last:
+        # Only companies still in companies.yaml: one taken off the list is no longer fetched.
+        tracked = {c["name"] for c in pipeline.load_companies()}
+        rows = [r for r in db.latest_company_runs(conn) if r["company"] in tracked]
+        if not rows:
             return {"run": None, "companies": [], "summary": {}}
+        last = conn.execute(
+            "SELECT * FROM runs WHERE id = (SELECT MAX(run_id) FROM company_runs)").fetchone()
+        # What each company returned the last time it was fetched successfully before that.
         previous = {
             r["company"]: r["india_count"] for r in conn.execute(
                 "SELECT company, india_count FROM company_runs c WHERE ok = 1 AND run_id = ("
                 "SELECT MAX(run_id) FROM company_runs WHERE company = c.company AND ok = 1 "
-                "AND run_id < ?)", (last["id"],))
+                "AND run_id < (SELECT MAX(run_id) FROM company_runs WHERE company = c.company))")
         }
         companies = []
-        for r in conn.execute(
-            "SELECT * FROM company_runs WHERE run_id = ? ORDER BY india_count DESC", (last["id"],)
-        ):
+        for r in rows:
             prev = previous.get(r["company"])
             status = pipeline.health_status(bool(r["ok"]), r["raw_count"], r["india_count"], prev)
             if r["ats"] == "custom":
@@ -374,15 +392,15 @@ def coverage():
         conn.close()
 
 
-_refresh_task: asyncio.Task | None = None
-
-
 @app.post("/api/refresh")
 async def refresh():
-    global _refresh_task
     if pipeline.PROGRESS["running"]:
         return {"started": False, "progress": pipeline.PROGRESS}
-    _refresh_task = asyncio.create_task(pipeline.run())
+    # Claimed here, before the run gets going, so a second click cannot start another.
+    pipeline.PROGRESS.update(running=True, done=0, total=0, current="")
+    # On its own thread with its own event loop. A run spends long stretches parsing
+    # and scoring; on the server's loop that froze the whole app until it was done.
+    threading.Thread(target=lambda: asyncio.run(pipeline.run()), name="refresh", daemon=True).start()
     return {"started": True}
 
 
@@ -438,6 +456,8 @@ if WEB_DIST.exists():
 
     @app.get("/{path:path}")
     def spa(path: str):
+        if path == "api" or path.startswith("api/"):
+            raise HTTPException(404, "not found")       # a mistyped API path is not the web app
         target = WEB_DIST / path
         if path and target.is_file() and WEB_DIST in target.resolve().parents:
             return FileResponse(target)
