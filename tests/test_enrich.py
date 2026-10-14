@@ -24,6 +24,16 @@ def test_locate_canonical_city():
     }
 
 
+@pytest.mark.parametrize("location, cities", [
+    ("IN_Bangalore_Sattva Knowledge Court Bdg_HII; India", ["Bengaluru"]),    # underscore-joined site code
+    ("Bangaluru Karnataka India; India", ["Bengaluru"]),
+    ("Pune/Mumbai", ["Pune", "Mumbai"]),
+    ("Puneet Nagar, India", []),                                              # not Pune
+])
+def test_locate_cities(location, cities):
+    assert enrich.locate(location)["cities"] == cities
+
+
 @pytest.mark.parametrize("text, lo, hi", [
     ("CTC: 12-18 LPA for this role", 12, 18),
     ("compensation of 25 LPA", 25, 25),
@@ -98,6 +108,19 @@ def _job(**kw):
     (_job(level="Intern", employment_type="Internship", salary_max_lpa=1.2, salary_text="₹10,000 / month"), "low"),
     (_job(level="Intern", employment_type="Internship", salary_max_lpa=5, salary_text="₹ 400000 to 500000"), "low"),
     (_job(source="internshala", description="Stipend: Unpaid"), "unpaid"),
+    (_job(source="linkedin", title="Flutter Developer Intern (Unpaid)"), "unpaid"),
+    (_job(source="linkedin", title="Robotics Project Intern (In-Office | Unpaid)"), "unpaid"),
+    (_job(source="linkedin", description="Note: This is a unpaid internship."), "unpaid"),
+    (_job(source="linkedin", description="This is an unpaid experiential learning internship."), "unpaid"),
+    (_job(source="linkedin", description="Duration: 3 months. Type: Unpaid."), "unpaid"),
+    (_job(source="linkedin", description="Please note that this internship is unpaid."), "unpaid"),
+    # the word alone is benefits or finance text, not a statement about the job
+    (_job(description="Sabbatical: extended unpaid and paid leave options"), "unknown"),
+    (_job(description="Well-being and care. Paid and unpaid leave. Flexible work options"), "unknown"),
+    (_job(description="Collect cash on unpaid invoices and follow up on unpaid documents"), "unknown"),
+    (_job(level="Intern", employment_type="Internship",
+          description="Is it a Paid/Unpaid internship? It is a paid Internship."), "unknown"),
+    (_job(description="Employees may take leave without pay after two years"), "unknown"),
     (_job(source="internshala", description="Candidates must pay a registration fee of Rs 2000"), "suspicious"),
     (_job(source="linkedin", description="We will never charge a registration fee."), "unknown"),
     (_job(description="Reconcile security deposit accounts"), "unknown"),

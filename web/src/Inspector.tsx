@@ -4,8 +4,8 @@
  * the card is drawn at its final size and revealed with a clip, never scaled, so
  * text stays crisp. Closing folds it shut towards its right edge.
  */
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { motion, useAnimate, useReducedMotion } from "motion/react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { motion, useAnimate, useIsPresent, useReducedMotion } from "motion/react";
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 const RADIUS = "round 8px";
@@ -40,6 +40,10 @@ export default function Inspector({ id, onClose, children }: { id: string; onClo
   const reduce = useReducedMotion();
   const mobile = useIsMobile();
   const [origin] = useState(() => takeOrigin(id));
+  // False once closing has begun: the card is still drawn while it folds shut.
+  const present = useIsPresent();
+  const open = useRef(present);
+  open.current = present;
 
   // Entrance, run before first paint.
   useLayoutEffect(() => {
@@ -64,14 +68,20 @@ export default function Inspector({ id, onClose, children }: { id: string; onClo
     } else {
       run = animateCard(el, { opacity: [0, 1], y: [18, 0] }, { duration: 0.42, ease: EASE_OUT });
     }
-    // Fully opaque throughout: the clip does the revealing. Drop it once open so the shadow shows.
-    run.then(() => { el.style.clipPath = ""; el.style.willChange = ""; });
+    // Fully opaque throughout: the clip does the revealing. Drop it once open so the shadow
+    // shows. That goes through Motion, which owns the value and puts a cleared style
+    // straight back; and not if the card is already closing, which animates the clip itself.
+    run.then(() => {
+      el.style.willChange = "";
+      if (open.current) animateCard(el, { clipPath: "none" }, { duration: 0 });
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
+      {/* While it closes, the card lets clicks through: the next row can be opened without waiting. */}
       <motion.div
-        className="fixed inset-0 z-40 bg-black/65" onClick={onClose}
+        className={`fixed inset-0 z-40 bg-black/65 ${present ? "" : "pointer-events-none"}`} onClick={onClose}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
       />
       <div className={`pointer-events-none fixed inset-0 z-50 flex items-center justify-center ${mobile ? "" : "p-3 lg:p-5"}`}>
@@ -81,7 +91,7 @@ export default function Inspector({ id, onClose, children }: { id: string; onClo
             ? { y: 48, opacity: 0, transition: { duration: 0.24, ease: [0.4, 0, 1, 1] } }
             : { clipPath: [`inset(0px 0px 0px 0% ${RADIUS})`, `inset(0px 0px 0px 100% ${RADIUS})`], opacity: [1, 0],
                 transition: { duration: 0.32, ease: [0.4, 0, 1, 1] } }}
-          className={`pointer-events-auto relative flex h-full w-full flex-col overflow-hidden bg-sheet [contain:layout] ${
+          className={`relative flex h-full w-full flex-col overflow-hidden bg-sheet [contain:layout] ${present ? "pointer-events-auto" : ""} ${
             mobile ? "" : "max-w-[1240px] rounded-[8px] border border-soft/40 shadow-2xl shadow-black/40"
           }`}
         >

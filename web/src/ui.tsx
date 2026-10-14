@@ -7,7 +7,8 @@ export function timeAgo(iso: string): string {
   if (Number.isNaN(days)) return "";
   if (days <= 0) return "today";
   if (days < 30) return `${days}d`;
-  return `${Math.floor(days / 30)}mo`;
+  if (days < 365) return `${Math.floor(days / 30)}mo`;
+  return `${Math.floor(days / 365)}y`;      // some boards keep a posting open for years
 }
 
 /** Pay as the reader should see it, and whether it is stated, estimated or bad. */
@@ -39,8 +40,14 @@ export function expOf(job: Job): string {
   return job.exp_min === 0 ? "Fresher" : `${job.exp_min}+ yr`;
 }
 
+/** Some boards list the country as one more place ("Bangalore, India; India"). Drop that repeat. */
+export function tidyPlace(location: string): string {
+  const parts = [...new Set(location.split(";").map((p) => p.trim()).filter(Boolean))];
+  return parts.filter((p) => !parts.some((other) => other !== p && other.endsWith(`, ${p}`))).join("; ");
+}
+
 export function placeOf(job: Job): string {
-  const where = job.cities.length ? job.cities.join(", ") : job.location;
+  const where = job.cities.length ? job.cities.join(", ") : tidyPlace(job.location);
   return job.is_remote && !/remote/i.test(where) ? `${where}, Remote` : where;
 }
 

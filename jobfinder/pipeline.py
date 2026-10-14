@@ -155,6 +155,15 @@ def health_status(ok: bool, raw: int, india: int, previous: int | None) -> str:
 
 async def run(companies: list[dict] | None = None, with_details: bool = True) -> dict:
     """One full refresh. Returns a summary dict."""
+    try:
+        return await _run(companies, with_details)
+    finally:
+        # Also when the run dies part-way: the app must not go on showing a fetch
+        # in progress, with Refresh disabled, until the server is restarted.
+        PROGRESS.update(running=False, current="")
+
+
+async def _run(companies: list[dict] | None, with_details: bool) -> dict:
     companies = companies or load_companies()
     profile = score.load_profile()
     conn = db.connect()
@@ -201,7 +210,7 @@ async def run(companies: list[dict] | None = None, with_details: bool = True) ->
                 # proves nothing; retire by age instead.
                 closed_total += conn.execute(
                     "UPDATE jobs SET is_active=0 WHERE source=? AND is_active=1 "
-                    "AND last_seen < datetime('now', ?)",
+                    f"AND last_seen < {db.ago()}",
                     (company["ats"], f"-{AGGREGATOR_TTL_DAYS} days"),
                 ).rowcount
             elif status == "ok":

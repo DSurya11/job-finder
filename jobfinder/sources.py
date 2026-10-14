@@ -217,12 +217,13 @@ async def recruitee(client: httpx.AsyncClient, co: dict) -> list[dict]:
 
 # ── Workday ──────────────────────────────────────────────────────────────────
 
-def _find_india_facet(facets: list) -> tuple[str, list[str]] | None:
-    """Locate the facet values that mean 'India' on this tenant.
+def _india_facets(facets: list) -> list[tuple[str, list[str]]]:
+    """The facet selections that mean 'India' on this tenant, most promising first.
 
     The parameter name and ids vary per tenant, so they are read from the
     tenant's own facet list: a country-level "India" value when there is one,
-    otherwise every site-level value that is an Indian location.
+    then each location facet's values that are Indian places. Several are
+    returned because a tenant can list a facet that selects nothing when applied.
     """
     from .enrich import locate
 
@@ -244,12 +245,8 @@ def _find_india_facet(facets: list) -> tuple[str, list[str]] | None:
                     sites.setdefault(param, []).append(v["id"])
 
     walk(facets, None)
-    if country:
-        return country
-    if sites:
-        param = max(sites, key=lambda k: len(sites[k]))
-        return param, sites[param]
-    return None
+    ranked = sorted(sites.items(), key=lambda kv: -len(kv[1]))
+    return ([country] if country else []) + ranked
 
 
 async def workday(client: httpx.AsyncClient, co: dict) -> list[dict]:
@@ -273,20 +270,26 @@ async def workday(client: httpx.AsyncClient, co: dict) -> list[dict]:
         raise RuntimeError("unreachable")
 
     first = await page({"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": ""})
-    facet = _find_india_facet(first.get("facets") or [])
-    if facet:
-        body = {"appliedFacets": {facet[0]: facet[1]}, "searchText": ""}
-    else:
-        # No country facet on this tenant: fall back to text search and let the
-        # location classifier drop the non-India matches.
-        logger.info("[Workday/%s] no India facet, using text search", co["name"])
-        body = {"appliedFacets": {}, "searchText": "India"}
+    searches = [{"appliedFacets": {param: ids}, "searchText": ""}
+                for param, ids in _india_facets(first.get("facets") or [])]
+    # Last resort, and the only one on a tenant with no location facet: text search,
+    # letting the location classifier drop the non-India matches.
+    searches.append({"appliedFacets": {}, "searchText": "India"})
 
-    out, offset, total = [], 0, None
+    # The first search that finds anything is used. Baker Hughes, for one, lists a
+    # city facet that selects nothing when applied, beside a state facet that works.
+    body, data, total = searches[0], {}, 0
+    for body in searches:
+        data = await page({**body, "limit": 20, "offset": 0})
+        total = data.get("total") or 0
+        if total:
+            break
+    facet = bool(body["appliedFacets"])
+    if not facet:
+        logger.info("[Workday/%s] no usable India facet, using text search", co["name"])
+
+    out, offset = [], 0
     while True:
-        data = await page({**body, "limit": 20, "offset": offset})
-        if total is None:
-            total = data.get("total") or 0
         postings = data.get("jobPostings") or []
         for p in postings:
             path = p.get("externalPath") or ""
@@ -308,6 +311,7 @@ async def workday(client: httpx.AsyncClient, co: dict) -> list[dict]:
         if not postings or offset >= total or offset >= 4000:
             return out
         await asyncio.sleep(delay)
+        data = await page({**body, "limit": 20, "offset": offset})
 
 
 # ── Atlassian (own listing endpoint) ─────────────────────────────────────────
@@ -333,6 +337,31 @@ async def atlassian(client: httpx.AsyncClient, co: dict) -> list[dict]:
             or f"https://www.atlassian.com/company/careers/details/{j.get('id')}",
             "departments": j.get("category") or "",
             "posted_at": _iso(portal.get("updatedDate")),
+        })
+    return out
+
+
+# ── Zerodha (own listing endpoint) ───────────────────────────────────────────
+
+async def zerodha(client: httpx.AsyncClient, co: dict) -> list[dict]:
+    base = "https://careers.zerodha.com"
+    resp = await client.get(f"{base}/api/jobs", headers={"User-Agent": UA}, timeout=40)
+    resp.raise_for_status()
+    data = resp.json()
+    if not data.get("success"):
+        raise RuntimeError("Zerodha jobs endpoint reported failure")
+    out = []
+    for j in data.get("data") or []:
+        location = j.get("location") or ""
+        if "remote" in (j.get("location_type") or "").lower():
+            location += " (Remote)"
+        out.append({
+            "title": j.get("job_title") or "",
+            "location": location,
+            "description_html": j.get("description") or "",
+            # The site has no page per job; applications go through a form on
+            # the listing, so the fragment only keeps each posting's URL unique.
+            "apply_url": f"{base}/#{j.get('name')}",
         })
     return out
 
@@ -402,7 +431,7 @@ async def dom_scraper(client, co):
 ADAPTERS = {
     "greenhouse": greenhouse, "lever": lever, "ashby": ashby,
     "smartrecruiters": smartrecruiters, "workable": workable, "recruitee": recruitee,
-    "workday": workday, "atlassian": atlassian,
+    "workday": workday, "atlassian": atlassian, "zerodha": zerodha,
     "amazon": amazon, "swiggy": swiggy, "eightfold": eightfold, "phenom": phenom,
     "servicenow": servicenow,
     "oracle": oracle, "gs_graphql": gs_graphql, "dom_scraper": dom_scraper,

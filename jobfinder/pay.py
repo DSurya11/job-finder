@@ -21,9 +21,20 @@ import re
 VERDICTS = ["target", "ok", "estimated", "unknown", "low", "unpaid", "suspicious"]
 BAD = ("low", "unpaid", "suspicious")
 
+# "Unpaid" counts only where it describes the position: "unpaid internship",
+# "Stipend: Unpaid", "(Unpaid)", "this role is unpaid". On its own the word mostly
+# turns up in benefits and finance text ("paid and unpaid leave", "unpaid invoices"),
+# and "Is it a paid/unpaid internship? It is paid" is a question, not a statement.
+_POSITION = r"(?:internships?|interns?|positions?|roles?|opportunit(?:y|ies)|trainee(?:ship)?s?|training|apprenticeships?)"
 _UNPAID = re.compile(
-    r"\bunpaid\b|\bno stipend\b|stipend:\s*(?:nil|none|0\b|not provided|performance based only)|"
-    r"\bvoluntary (?:position|role|internship)\b|\bwithout (?:pay|stipend|remuneration)\b",
+    r"(?<!paid/)(?<!paid / )(?<!paid or )(?<!paid and )\bunpaid\s+(?!(?:leave|time|and|or)\b)"
+    r"(?:[\w-]+\s+){0,2}" + _POSITION + r"\b|"
+    r"\b(?:stipend|salary|pay|compensation|remuneration|type)\s*[:–-]\s*unpaid\b|"
+    r"[(\[|]\s*unpaid\s*[)\]|]|"
+    r"\b" + _POSITION + r"\s+(?:is|are|will be)\s+unpaid\b|"
+    r"\bno stipend\b|stipend:\s*(?:nil|none|0\b|not provided|performance based only)|"
+    r"\bvoluntary (?:position|role|internship)\b|"
+    r"(?<!leave )\bwithout (?:pay|stipend|remuneration)\b",
     re.I,
 )
 # Legitimate employers do not charge candidates. Each phrase here is a request for

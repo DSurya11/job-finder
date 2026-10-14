@@ -50,8 +50,9 @@ companies:
   enabled: true
   india_only: true
 - name: Zerodha
-  ats: custom
+  ats: zerodha
   careers_url: https://careers.zerodha.com/
+  india_only: true
   enabled: true
 - name: Amazon
   ats: amazon
@@ -67,8 +68,11 @@ companies:
   oracle_site_id: CX_1001
   enabled: true
 - name: Walmart Global Tech
-  ats: custom
-  careers_url: https://careers.walmart.com/us/en/results?q=&jobCountry=India
+  ats: workday
+  careers_url: https://walmart.wd504.myworkdayjobs.com/WalmartExternal
+  tenant: walmart
+  wd_instance: wd504
+  site: WalmartExternal
   enabled: true
 - name: Atlassian
   ats: atlassian
@@ -114,12 +118,15 @@ companies:
   ats: custom
   enabled: true
 - name: SAP Labs India
-  ats: custom
+  ats: smartrecruiters
   careers_url: https://jobs.sap.com/en/jobs/?country=India
+  slug: SAPITBusinessSysteme
   enabled: true
 - name: American Express
-  ats: custom
-  careers_url: https://aexp.eightfold.ai
+  ats: oracle
+  careers_url: https://careers.americanexpress.com/en/sites/CX_1
+  oracle_url: https://egug.fa.us2.oraclecloud.com
+  oracle_site_id: CX_1
   enabled: true
 - name: Visa
   careers_url: https://careers.visa.com

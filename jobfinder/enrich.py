@@ -59,7 +59,7 @@ def iso_date(value) -> str:
 
 # canonical city -> aliases (lowercase)
 _CITY_ALIASES: dict[str, tuple[str, ...]] = {
-    "Bengaluru": ("bengaluru", "bangalore", "bengalore"),
+    "Bengaluru": ("bengaluru", "bangalore", "bengalore", "bangaluru"),
     "Hyderabad": ("hyderabad", "secunderabad"),
     "Pune": ("pune",),
     "Mumbai": ("mumbai", "navi mumbai", "thane", "bombay"),
@@ -92,8 +92,11 @@ _CITY_ALIASES: dict[str, tuple[str, ...]] = {
     "Jabalpur": ("jabalpur",),
 }
 _ALIAS_TO_CITY = {a: c for c, al in _CITY_ALIASES.items() for a in al}
+# Bounded by anything that is not a letter or digit, rather than \b: site codes join
+# their parts with underscores ("IN_Bangalore_Sattva Knowledge Court"), which \b reads as one word.
 _CITY_RE = re.compile(
-    r"\b(" + "|".join(sorted(map(re.escape, _ALIAS_TO_CITY), key=len, reverse=True)) + r")\b",
+    r"(?<![a-z0-9])(" + "|".join(sorted(map(re.escape, _ALIAS_TO_CITY), key=len, reverse=True))
+    + r")(?![a-z0-9])",
     re.I,
 )
 _STATE_RE = re.compile(

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { EASE, NumberTicker } from "./fx";
 import { emptyFilters, type Facet, type Facets, type Filters } from "./api";
@@ -8,15 +8,31 @@ function Menu({ label, count, align = "left", children }: {
   label: string; count?: number; align?: "left" | "right"; children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [shift, setShift] = useState(0);
   const box = useRef<HTMLDivElement>(null);
+  // Keep the panel on screen. In a narrow window the button can sit closer to an
+  // edge than the panel is wide, and the panel would hang off that edge.
+  useLayoutEffect(() => {
+    if (!open || !box.current) return;
+    const at = box.current.getBoundingClientRect(), width = 240, margin = 8;
+    const wanted = align === "right" ? at.right - width : at.left;
+    // clientWidth, not innerWidth: on a phone that grows to take in the overflowing panel itself.
+    setShift(Math.max(margin, Math.min(wanted, document.documentElement.clientWidth - width - margin)) - wanted);
+  }, [open, align]);
   useEffect(() => {
     if (!open) return;
-    const away = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    // A click elsewhere puts the menu away. On a job row that is all it does: it is
+    // caught on the way down and stopped, so the row under the pointer does not open.
+    const away = (e: MouseEvent) => {
+      if (box.current?.contains(e.target as Node)) return;
+      setOpen(false);
+      if ((e.target as Element).closest?.("[role=row]")) e.stopPropagation();
+    };
     // Escape closes the menu only; it must not also close the detail panel.
     const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } };
-    document.addEventListener("mousedown", away);
+    document.addEventListener("click", away, true);
     document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+    return () => { document.removeEventListener("click", away, true); document.removeEventListener("keydown", esc); };
   }, [open]);
   return (
     <div ref={box} className="relative">
@@ -36,8 +52,8 @@ function Menu({ label, count, align = "left", children }: {
             initial={{ opacity: 0, y: -4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -3, scale: 0.98, transition: { duration: 0.08 } }}
             transition={{ duration: 0.14, ease: EASE }}
-            style={{ transformOrigin: align === "right" ? "top right" : "top left" }}
-            className={`thin absolute top-8 z-30 max-h-[70vh] w-60 overflow-y-auto rounded-[3px] border border-rule bg-sheet p-2 ${align === "right" ? "right-0" : "left-0"}`}
+            style={align === "right" ? { transformOrigin: "top right", right: -shift } : { transformOrigin: "top left", left: shift }}
+            className="thin absolute top-8 z-30 max-h-[70vh] w-60 overflow-y-auto rounded-[3px] border border-rule bg-sheet p-2"
           >
             {children}
           </motion.div>

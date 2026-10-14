@@ -20,6 +20,16 @@ const KEYS: [string, string][] = [
   ["x", "dismiss"], ["c", "add to Claude prompt"], ["n / p", "next / previous page"], ["/", "search"], ["esc", "close card"],
 ];
 
+/** A viewfinder: four corner brackets framing one marked point. */
+function Logo() {
+  return (
+    <svg viewBox="0 0 32 32" className="size-[15px] shrink-0" aria-hidden>
+      <path d="M4 11V4h7M21 4h7v7M28 21v7h-7M11 28H4v-7" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="square" />
+      <rect x="12" y="12" width="8" height="8" className="fill-mark" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState("all");            // all | new | <status> | coverage
   const [filters, setFilters] = useState<Filters>(emptyFilters);
@@ -44,6 +54,15 @@ export default function App() {
   const request = useRef(0);
   const table = useRef<HTMLElement>(null);
   const searchBox = useRef<HTMLInputElement>(null);
+
+  // Each opening is its own card. One reopened while the last is still folding shut
+  // unfolds afresh, instead of the closing card being handed back half shut.
+  const [cardNo, setCardNo] = useState(0);
+  const [cardOpen, setCardOpen] = useState(false);
+  if ((openId !== null) !== cardOpen) {
+    setCardOpen(openId !== null);
+    if (openId !== null) setCardNo((n) => n + 1);
+  }
 
   // Debounce typing so each keystroke is not a query.
   useEffect(() => {
@@ -157,15 +176,20 @@ export default function App() {
       if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); setOpenId(jobs[Math.min(at + 1, jobs.length - 1)].id); }
       else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); setOpenId(jobs[Math.max(at - 1, 0)].id); }
       else if (!job) return;
-      else if (e.key === "o" || e.key === "Enter") window.open(job.apply_url, "_blank", "noopener");
-      else if (e.key === "s") mark(job, "saved");
-      else if (e.key === "a") mark(job, "applied");
+      // Enter on a focused button or link presses that; it must not open the posting too.
+      else if (e.key === "o" || (e.key === "Enter" && !el.closest("a, button"))) window.open(job.apply_url, "_blank", "noopener");
+      else if (e.key === "s" || e.key === "a") {
+        const status = e.key === "s" ? "saved" : "applied";
+        // In a status view the job may leave the list; the card then moves on, as it does for x.
+        if (leaves(job.status === status ? null : status)) setOpenId(jobs[at + 1]?.id ?? jobs[at - 1]?.id ?? null);
+        mark(job, status);
+      }
       else if (e.key === "x") { setOpenId(jobs[at + 1]?.id ?? jobs[at - 1]?.id ?? null); mark(job, "hidden"); }
       else if (e.key === "c") togglePick(job.id);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [jobs, openId, view, showKeys, mark, togglePick, goTo, page]);
+  }, [jobs, openId, view, showKeys, mark, leaves, togglePick, goTo, page]);
 
   const copyPrompt = async () => {
     const { prompt } = await buildPrompt(picked);
@@ -195,7 +219,9 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <div className="flex h-full">
       <nav className="hidden w-[168px] shrink-0 flex-col border-r border-rule p-2 md:flex">
-        <div className="px-2 pb-3 pt-1.5 text-[13px] font-semibold">Job Finder</div>
+        <div className="flex items-center gap-2 px-2 pb-3 pt-1.5 text-[13px] font-semibold">
+          <Logo /> Job Finder
+        </div>
         {railItem("all", "All")}
         {railItem("new", "New today")}
         <div className="my-2 border-t border-rule" />
@@ -207,7 +233,8 @@ export default function App() {
             disabled={running} onClick={() => startRefresh().then(() => setProgress({ running: true, done: 0, total: 0, current: "" }))}
             className="block text-left hover:text-ink disabled:text-faint"
           >
-            {running ? <span className="num">Fetching {progress?.done ?? 0}/{progress?.total ?? 0}</span> : "Refresh jobs"}
+            {/* After the boards comes the long pass over job descriptions; say so, or the count just sits at the total. */}
+            {running ? <span className="num">{progress?.current === "job descriptions" ? "Fetching descriptions" : progress?.total ? `Fetching ${progress.done}/${progress.total}` : "Fetching…"}</span> : "Refresh jobs"}
           </button>
           <button onClick={() => setShowKeys(true)} className="block hover:text-ink">Shortcuts <kbd>?</kbd></button>
         </div>
@@ -253,29 +280,30 @@ export default function App() {
               )}
               <JobRows jobs={jobs} setKey={setKey} openId={openId} picked={picked} onOpen={open} />
             </section>
-            <footer className="flex h-10 shrink-0 items-center gap-4 border-t border-rule px-3 text-[12.5px] text-soft">
+            {/* Nothing here wraps. As the bar narrows it drops, in turn, the label, First and Last, then the range. */}
+            <footer className="@container flex h-10 shrink-0 items-center gap-4 whitespace-nowrap border-t border-rule px-3 text-[12.5px] text-soft">
               <label className="flex items-center gap-2">
-                Rows per page
+                <span className="hidden @3xl:inline">Rows per page</span>
                 <select
-                  value={size} onChange={(e) => changeSize(Number(e.target.value))}
+                  value={size} onChange={(e) => changeSize(Number(e.target.value))} title="Rows per page" aria-label="Rows per page"
                   className="num h-7 rounded-[3px] border border-rule bg-paper px-1.5 text-[12px] text-ink outline-none"
                 >
                   {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
               </label>
-              <span className="num">
+              <span className="num hidden @lg:inline">
                 {total === 0 ? "0" : `${((page - 1) * size + 1).toLocaleString("en-IN")}–${Math.min(page * size, total).toLocaleString("en-IN")}`} of {total.toLocaleString("en-IN")}
               </span>
               <div className="ml-auto flex items-center gap-1.5">
                 <button onClick={() => goTo(1)} disabled={page <= 1 || loading} title="First page"
-                  className="h-7 rounded-[3px] border border-rule px-2 hover:text-ink disabled:opacity-35">First</button>
+                  className="hidden h-7 rounded-[3px] border border-rule px-2 hover:text-ink disabled:opacity-35 @2xl:block">First</button>
                 <button onClick={() => goTo(page - 1)} disabled={page <= 1 || loading} title="Previous page (p)"
                   className="h-7 rounded-[3px] border border-rule px-2.5 hover:text-ink disabled:opacity-35">Previous</button>
                 <span className="num px-2">Page <span className="text-ink">{page.toLocaleString("en-IN")}</span> of {pages.toLocaleString("en-IN")}</span>
                 <button onClick={() => goTo(page + 1)} disabled={page >= pages || loading} title="Next page (n)"
                   className="h-7 rounded-[3px] border border-rule px-2.5 hover:text-ink disabled:opacity-35">Next</button>
                 <button onClick={() => goTo(pages)} disabled={page >= pages || loading} title="Last page"
-                  className="h-7 rounded-[3px] border border-rule px-2 hover:text-ink disabled:opacity-35">Last</button>
+                  className="hidden h-7 rounded-[3px] border border-rule px-2 hover:text-ink disabled:opacity-35 @2xl:block">Last</button>
               </div>
             </footer>
             </div>
@@ -285,9 +313,10 @@ export default function App() {
 
       <AnimatePresence>
         {openId && view !== "coverage" && (
-          <Inspector key="inspector" id={openId} onClose={() => setOpenId(null)}>
+          <Inspector key={cardNo} id={openId} onClose={() => setOpenId(null)}>
             <Detail
-              id={openId} picked={picked.includes(openId)} onPick={() => togglePick(openId)} onClose={() => setOpenId(null)}
+              id={openId} status={jobs.find((j) => j.id === openId)?.status}
+              picked={picked.includes(openId)} onPick={() => togglePick(openId)} onClose={() => setOpenId(null)}
               onChanged={(job) => {
                 if (leaves(job.status)) {
                   setJobs((list) => list.filter((j) => j.id !== job.id));
@@ -326,7 +355,8 @@ export default function App() {
             className="fixed inset-0 z-[70] grid place-items-center bg-black/25" onClick={() => setShowKeys(false)}
           >
             <motion.div
-              initial={{ scale: 0.96, y: 6 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 4 }} transition={SPRING}
+              // The exit is a short tween: a spring's long tail would keep the unseen overlay catching clicks.
+              initial={{ scale: 0.96, y: 6 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 4, transition: { duration: 0.12 } }} transition={SPRING}
               className="rounded-[4px] border border-rule bg-sheet p-4" onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-2 text-[13px] font-semibold">Shortcuts</div>

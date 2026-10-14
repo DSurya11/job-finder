@@ -11,13 +11,15 @@ const COLUMNS: [string, string, "asc" | "desc", string][] = [
   ["Title", "title", "asc", ""],
   ["Location", "location", "asc", "hidden @2xl:block"],
   ["Pay", "pay", "desc", ""],
-  ["Posted", "posted", "desc", "text-right"],
+  ["Posted", "posted", "desc", "hidden text-right @xl:block"],
   ["Source", "source", "asc", "hidden @4xl:block"],
   ["Status", "status", "asc", "hidden @xl:block"],
 ];
+// At its narrowest (a phone) the table keeps four columns and shares the width
+// between company and title; with fixed widths the title was left three letters.
 const GRID =
   "grid h-9 items-center gap-x-3 px-3 " +
-  "grid-cols-[1.75rem_6.5rem_minmax(0,1fr)_7rem_2.75rem] " +
+  "grid-cols-[1.5rem_minmax(0,0.8fr)_minmax(0,1.2fr)_5.75rem] " +
   "@xl:grid-cols-[1.75rem_8rem_minmax(0,1fr)_7.25rem_2.75rem_5rem] " +
   "@2xl:grid-cols-[1.75rem_8.5rem_minmax(0,1.5fr)_minmax(0,0.8fr)_7.25rem_2.75rem_5rem] " +
   "@4xl:grid-cols-[1.75rem_9.5rem_minmax(0,1.5fr)_minmax(0,0.8fr)_7.5rem_2.75rem_5.5rem_5.5rem]";
@@ -85,7 +87,7 @@ export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen 
       <span className={`num truncate text-[11.5px] ${TONE[pay.tone]}`} title={estimated ? "Rough estimate. The posting does not state pay." : pay.text}>
         {pay.text}{estimated && <span className="text-faint"> {job.est_source === "band" ? "guess" : job.est_source === "market" ? "mkt" : "est"}</span>}
       </span>
-      <span className="num text-right text-[11.5px] text-faint">{timeAgo(job.posted_at || job.first_seen)}</span>
+      <span className="num hidden text-right text-[11.5px] text-faint @xl:block">{timeAgo(job.posted_at || job.first_seen)}</span>
       <span className="hidden truncate text-[12px] text-faint @4xl:block">{job.source}</span>
       <span className="hidden items-center gap-1.5 text-[12px] text-soft @xl:flex">
         {status ? (
