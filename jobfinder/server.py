@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import agent, db, pipeline, queries, score
+from . import agent, agent_tools, db, pipeline, queries, score
 from .pay import floors as pay_floors
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -341,9 +341,45 @@ def ask_jobs(body: AskIn):
     finally:
         conn.close()
     return {"answer": result.answer, "stopped": result.stopped, "steps": result.steps,
-            "total_matching": result.total_matching,
+            "total_matching": result.total_matching, "search": result.search,
             "tokens_in": result.tokens_in, "tokens_out": result.tokens_out,
             "seconds": result.seconds, "jobs": jobs}
+
+
+class MatchesIn(BaseModel):
+    search: dict
+    exclude: list[str] = []
+    page: int = Field(1, ge=1)
+    size: int = Field(50, ge=1, le=200)
+    sort: str = "score"
+    dir: str | None = None
+
+
+@app.post("/api/ask/matches")
+def ask_matches(body: MatchesIn):
+    """Every job matching the agent's last search, paged like /api/jobs, minus its picks.
+
+    The model reads at most a few rows of a search; this lists all of them, with no model
+    involved. The filters come back from the browser, so they are checked again here.
+    """
+    conn = db.connect()
+    try:
+        try:
+            filters = agent_tools.checked_filters(conn, **body.search)
+        except (TypeError, agent_tools.ToolError) as error:
+            raise HTTPException(400, f"not a search the agent could have run: {error}")
+        where, args = agent_tools.filter_sql(filters)
+        if body.exclude:
+            # The picks are shown above, and each stands for its whole group (company,
+            # title, level), so their groups are left out here, not just the picked rows.
+            where += f" AND j.grp NOT IN (SELECT grp FROM jobs WHERE id IN ({','.join('?' * len(body.exclude))}))"
+            args = [*args, *body.exclude]
+        total, rows = queries.find_jobs(conn, where, args, filters["title_words"], body.sort,
+                                        body.dir, body.page, body.size)
+        return {"total": total, "page": body.page, "size": body.size,
+                "jobs": [db.job_to_dict(r) for r in rows]}
+    finally:
+        conn.close()
 
 
 class PromptIn(BaseModel):

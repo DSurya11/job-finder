@@ -84,7 +84,7 @@ _OFF = {
 }
 
 
-def _where(f: dict) -> tuple[str, list]:
+def filter_sql(f: dict) -> tuple[str, list]:
     """The table's own filter code, fed from the agent's filter names."""
     return queries.build_where(
         q=f["title_words"], role=",".join(f["roles"]), level=",".join(f["levels"]),
@@ -99,7 +99,7 @@ def _where(f: dict) -> tuple[str, list]:
 
 # ------------------------------------------------------------------ search_jobs
 
-def search_jobs(
+def checked_filters(
     conn: sqlite3.Connection, *, roles: list[str] | None = None, levels: list[str] | None = None,
     employment_types: list[str] | None = None, cities: list[str] | None = None,
     remote_only: bool = False, min_pay_lpa: float | None = None,
@@ -107,16 +107,17 @@ def search_jobs(
     statuses: list[str] | None = None, title_words: str | None = None,
     description_words: str | None = None, description_any: list[str] | None = None,
     hide_low_pay: bool = True, tech_only: bool = True,
-    sort: str = "best_fit", limit: int = 10,
-) -> str:
+) -> dict:
+    """search_jobs' filters, checked and in canonical form (city spellings resolved).
+
+    The Ask view pages through the same search with these, so they are checked the
+    same way whether the model or the browser sends them.
+    """
     roles = _check("roles", roles, _choices(conn, "role"))
     levels = _check("levels", levels, _choices(conn, "level"))
     employment_types = _check("employment_types", employment_types,
                               _choices(conn, "employment_type"))
     statuses = _check("statuses", statuses, STATUSES)
-    if sort not in SORTS:
-        raise ToolError(f"unknown sort '{sort}'. Allowed: {list(SORTS)}")
-
     canonical: list[str] = []
     for city in cities or []:
         found = enrich.locate(city)["cities"]
@@ -124,8 +125,7 @@ def search_jobs(
             raise ToolError(f"unknown city '{city}'. Cities with jobs: {_cities_with_jobs(conn)}. "
                             "For remote jobs use remote_only instead of a city.")
         canonical += [c for c in found if c not in canonical]
-
-    filters = {
+    return {
         "roles": roles, "levels": levels, "employment_types": employment_types,
         "cities": canonical, "remote_only": remote_only, "min_pay_lpa": min_pay_lpa,
         "max_experience_years": max_experience_years, "posted_within_days": posted_within_days,
@@ -133,7 +133,15 @@ def search_jobs(
         "description_any": description_any or [], "hide_low_pay": hide_low_pay,
         "tech_only": tech_only,
     }
-    where, args = _where(filters)
+
+
+def search_jobs(conn: sqlite3.Connection, *, sort: str = "best_fit", limit: int = 10,
+                **filters) -> str:
+    if sort not in SORTS:
+        raise ToolError(f"unknown sort '{sort}'. Allowed: {list(SORTS)}")
+    filters = checked_filters(conn, **filters)
+    title_words, posted_within_days = filters["title_words"], filters["posted_within_days"]
+    where, args = filter_sql(filters)
     limit = max(1, min(int(limit), MAX_ROWS))
     total, rows = queries.find_jobs(conn, where, args, title_words, SORTS[sort], None, 1, limit)
     jobs = [db.job_to_dict(r) for r in rows]
@@ -158,7 +166,7 @@ def search_jobs(
         # Which filter emptied the result is a fact to count, not a guess for the model: on
         # its first real run it named the wrong one.
         result["if_you_drop"] = {
-            name: queries.find_jobs(conn, *_where({**filters, name: _OFF[name]}), None, "score", None, 1, 1)[0]
+            name: queries.find_jobs(conn, *filter_sql({**filters, name: _OFF[name]}), None, "score", None, 1, 1)[0]
             for name in active}
         result["note"] = ("Nothing matches. if_you_drop gives how many jobs would match with that "
                           "one filter removed.")

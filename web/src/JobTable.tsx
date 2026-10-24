@@ -54,10 +54,10 @@ export function TableHead({ sort, dir, onSort }: {
 
 const STAGGER = 16;     // only the first screenful animates in; the rest just appear
 
-type RowProps = { job: Job; active: boolean; picked: boolean; index: number; onOpen: (id: string) => void };
+type RowProps = { job: Job; active: boolean; picked: boolean; pinned?: boolean; index: number; onOpen: (id: string) => void };
 
 /** Memoised: moving the cursor re-renders two rows, not the whole table. */
-export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen }: RowProps) {
+export const JobRow = memo(function JobRow({ job, active, picked, pinned, index, onOpen }: RowProps) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (active) ref.current?.scrollIntoView({ block: "nearest" });
@@ -74,7 +74,8 @@ export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen 
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, x: -24, height: 0, transition: { duration: 0.18, ease: EASE } }}
       transition={{ duration: 0.26, ease: EASE, delay: enters ? index * 0.014 : 0 }}
-      className={`${GRID} row relative cursor-pointer overflow-hidden border-b border-rule ${active ? "bg-tint" : "hover:bg-sheet"}`}
+      className={`${GRID} row relative cursor-pointer overflow-hidden border-b border-rule ${active ? "bg-tint" : "hover:bg-sheet"} ${
+        pinned ? "shadow-[inset_3px_0_0_var(--mark)]" : ""}`}
     >
       {active && <motion.span layoutId="cursor" className="absolute inset-y-0 left-0 w-[2px] bg-mark" transition={SPRING} />}
       <span className={`num text-[12.5px] ${job.score >= 70 ? "font-medium text-ink" : "text-faint"}`}>{Math.round(job.score)}</span>
@@ -103,16 +104,27 @@ export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen 
 });
 
 /** The rows of one result set. `setKey` changes when the query does, replaying the entrance. */
-export function JobRows({ jobs, setKey, openId, picked, onOpen }: {
+export function JobRows({ jobs, setKey, openId, picked, onOpen, pinned }: {
   jobs: Job[]; setKey: number; openId: string | null; picked: string[]; onOpen: (id: string) => void;
+  pinned?: boolean;
 }) {
   return (
     <div key={setKey}>
       <AnimatePresence initial={false}>
         {jobs.map((job, i) => (
-          <JobRow key={job.id} job={job} index={i} active={job.id === openId} picked={picked.includes(job.id)} onOpen={onOpen} />
+          <JobRow key={job.id} job={job} index={i} active={job.id === openId} picked={picked.includes(job.id)} pinned={pinned} onOpen={onOpen} />
         ))}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/** A labelled divider inside the table: what the rows below it are. */
+export function SectionHead({ title, note }: { title: string; note: string }) {
+  return (
+    <div className="flex items-baseline gap-2 border-b border-rule bg-paper px-3 py-1.5 text-[11.5px]">
+      <span className="font-medium text-ink">{title}</span>
+      <span className="text-faint">{note}</span>
     </div>
   );
 }

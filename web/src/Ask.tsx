@@ -66,7 +66,7 @@ export function AskAnswer({ result, error, busy, onExample }: {
       <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11.5px] text-faint">
         {result.total_matching != null && (
           <span className="num text-soft">
-            {result.total_matching.toLocaleString("en-IN")} match · showing {result.jobs.length} ·
+            {result.total_matching.toLocaleString("en-IN")} match ·
           </span>
         )}
         <span className="num">

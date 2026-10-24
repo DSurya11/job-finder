@@ -146,6 +146,8 @@ export type AskResult = {
   answer: string; stopped: "answered" | "step_limit" | "token_budget" | "error";
   /** From the agent's last search, counted by the database: not the model's claim. */
   total_matching: number | null;
+  /** That search's filters, to list every match; null when the agent never searched. */
+  search: Record<string, unknown> | null;
   steps: AskStep[]; tokens_in: number; tokens_out: number; seconds: number; jobs: Job[];
 };
 
@@ -157,4 +159,16 @@ export async function askJobs(question: string): Promise<AskResult> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `${res.status} ${res.statusText}`);
   return body;
+}
+
+/** Every job matching the agent's last search, paged, without the groups of its picks. */
+export async function fetchAskMatches(search: Record<string, unknown>, exclude: string[], page: number,
+                                      size: number, sort: string, dir: "asc" | "desc") {
+  const res = await fetch("/api/ask/matches", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ search, exclude, page, size, sort, dir }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `${res.status} ${res.statusText}`);
+  return body as { total: number; page: number; size: number; jobs: Job[] };
 }

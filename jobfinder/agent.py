@@ -80,6 +80,7 @@ class Result:
     job_ids: list[str]
     stopped: str                    # answered | step_limit | token_budget | error
     total_matching: int | None = None   # from the last search: a count, not the model's claim
+    search: dict | None = None          # that search's filters, so the app can list every match
     steps: list[dict] = field(default_factory=list)
     tokens_in: int = 0
     tokens_out: int = 0
@@ -222,6 +223,8 @@ def _loop(question: str, conn: sqlite3.Connection, client: OpenAI, model: str,
                     seen.extend(i for i in _ids_in(text) if i not in seen)
                     if call.function.name == "search_jobs":
                         result.total_matching = json.loads(text)["total_matching"]
+                        result.search = {k: v for k, v in json.loads(call.function.arguments or "{}").items()
+                                         if k not in ("sort", "limit")}
             result.steps.append({
                 "step": step, "kind": "tool", "tool": call.function.name,
                 "arguments": call.function.arguments, "failed": failed, "result": text[:300],
