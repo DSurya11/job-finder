@@ -268,3 +268,27 @@ def print_summary(summary: dict) -> None:
         note = p["error"] or (f"was {p['previous']}, now {p['india']}" if p["status"] == "dropped" else "0 postings")
         print(f"  [{p['status']:7}] {p['company']:28} {p['ats']:16} {note}")
     print(json.dumps({k: v for k, v in summary.items() if k not in ("report", "problems")}))
+
+
+def rescore(conn) -> int:
+    """Re-score every stored job and redo its pay verdict, e.g. after the profile changes.
+
+    Returns how many jobs were re-scored. Commits in batches, so the web app can still
+    save while this runs.
+    """
+    profile = score.load_profile()
+    rows = conn.execute("SELECT * FROM jobs").fetchall()
+    for n, row in enumerate(rows, 1):
+        if n % 500 == 0:
+            conn.commit()
+        job = db.job_to_dict(row)
+        pay.apply_band(job)
+        job["pay_verdict"] = pay.judge(job, profile)
+        value, reasons = score.score_job(job, profile)
+        conn.execute(
+            "UPDATE jobs SET score=?, score_reasons=?, pay_verdict=?, est_min_lpa=?, "
+            "est_max_lpa=?, est_source=? WHERE id=?",
+            (value, json.dumps(reasons), job["pay_verdict"], job.get("est_min_lpa"),
+             job.get("est_max_lpa"), job.get("est_source"), job["id"]))
+    conn.commit()
+    return len(rows)

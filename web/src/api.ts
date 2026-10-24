@@ -120,3 +120,17 @@ export const buildPrompt = (job_ids: string[]) =>
   json<{ prompt: string }>("/api/prompt", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_ids }),
   });
+
+export type PayFloors = { min_lpa: number; target_lpa: number };
+export const fetchPayFloors = () => json<PayFloors>("/api/settings/pay");
+
+/** Saves the floors to user_profile.yaml and re-scores every job; a few seconds. */
+export async function savePayFloors(floors: PayFloors): Promise<PayFloors & { rescored: number }> {
+  const res = await fetch("/api/settings/pay", {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(floors),
+  });
+  const body = await res.json().catch(() => ({}));
+  // The server says why it refused ("need 0 < minimum <= target"), so show that, not "400".
+  if (!res.ok) throw new Error(body.detail ?? `${res.status} ${res.statusText}`);
+  return body;
+}

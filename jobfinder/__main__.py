@@ -61,25 +61,8 @@ def main() -> None:
         from . import brain as brain_module
         print(brain_module.run(args.limit))
     elif args.cmd == "rescore":
-        from . import db, pay, score
-        conn = db.connect()
-        profile = score.load_profile()
-        import json
-        rows = conn.execute("SELECT * FROM jobs").fetchall()
-        for n, row in enumerate(rows, 1):
-            if n % 500 == 0:
-                conn.commit()       # in batches, so the web app can still save while this runs
-            job = db.job_to_dict(row)
-            pay.apply_band(job)
-            job["pay_verdict"] = pay.judge(job, profile)
-            value, reasons = score.score_job(job, profile)
-            conn.execute(
-                "UPDATE jobs SET score=?, score_reasons=?, pay_verdict=?, est_min_lpa=?, "
-                "est_max_lpa=?, est_source=? WHERE id=?",
-                (value, json.dumps(reasons), job["pay_verdict"], job.get("est_min_lpa"),
-                 job.get("est_max_lpa"), job.get("est_source"), job["id"]))
-        conn.commit()
-        print(f"Re-scored {len(rows)} jobs")
+        from . import db, pipeline
+        print(f"Re-scored {pipeline.rescore(db.connect())} jobs")
     elif args.cmd == "health":
         from . import db, pipeline
         conn = db.connect()

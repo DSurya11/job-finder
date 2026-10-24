@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import db, pipeline, queries, score
+from .pay import floors as pay_floors
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 STATUSES = {"saved", "applied", "interview", "offer", "rejected", "hidden"}
@@ -124,6 +125,35 @@ def set_state(job_id: str, body: StateIn):
         return {"ok": True}
     finally:
         conn.close()
+
+
+class PayFloorsIn(BaseModel):
+    min_lpa: float
+    target_lpa: float
+
+
+@app.get("/api/settings/pay")
+def get_pay_floors():
+    floors = pay_floors(score.load_profile())
+    return {"min_lpa": floors["min_lpa"], "target_lpa": floors["target_lpa"]}
+
+
+@app.put("/api/settings/pay")
+def set_pay_floors(body: PayFloorsIn):
+    """Change the pay floors in user_profile.yaml, then re-score every job against them."""
+    if pipeline.PROGRESS["running"]:
+        # A refresh re-scores as it goes; two writers would leave a mix of old and new floors.
+        raise HTTPException(409, "a refresh is running: save the pay floor when it ends")
+    try:
+        score.save_pay_floors(body.min_lpa, body.target_lpa)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
+    conn = db.connect()
+    try:
+        rescored = pipeline.rescore(conn)
+    finally:
+        conn.close()
+    return {**get_pay_floors(), "rescored": rescored}
 
 
 @app.get("/api/facets")

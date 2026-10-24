@@ -32,6 +32,27 @@ def _skill_pattern(skill: str) -> re.Pattern:
     return re.compile(r"(?<![\w+#])" + re.escape(core) + r"(?![\w+#])", re.I)
 
 
+def save_pay_floors(min_lpa: float, target_lpa: float, path: str | Path | None = None) -> None:
+    """Set min_lpa and target_lpa in user_profile.yaml, keeping every other line and comment.
+
+    The file stays the one place the floors live; the web app's Pay menu edits it through
+    this. Run a rescore afterwards: stored scores and pay verdicts depend on the floors.
+    """
+    if not 0 < min_lpa <= target_lpa <= 500:
+        raise ValueError("need 0 < minimum <= target <= 500 (LPA)")
+    file = Path(path or PROFILE_PATH)
+    text = file.read_text(encoding="utf-8")
+    for key, value in (("min_lpa", min_lpa), ("target_lpa", target_lpa)):
+        text, found = re.subn(rf"^(\s*{key}:[ \t]*)[0-9.]+", lambda m: f"{m.group(1)}{value:g}",
+                              text, count=1, flags=re.M)
+        if not found:
+            raise ValueError(f"no '{key}:' line under job_preferences in {file.name}")
+    temp = file.with_suffix(".yaml.tmp")
+    temp.write_text(text, encoding="utf-8")
+    temp.replace(file)                  # all at once: a crash never leaves half a profile
+    load_profile.cache_clear()          # the cached copy still has the old floors
+
+
 @lru_cache(maxsize=1)
 def load_profile(path: str | None = None) -> dict:
     raw = yaml.safe_load(Path(path or PROFILE_PATH).read_text(encoding="utf-8")) or {}
