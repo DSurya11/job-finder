@@ -49,6 +49,15 @@ def test_rows_are_capped_and_say_how_many_more_match(conn):
     assert "description" not in found["jobs"][0]           # short rows only
 
 
+def test_an_empty_search_counts_what_each_filter_costs(conn):
+    found = json.loads(tools.search_jobs(conn, cities=["Gurgaon"], roles=["DevOps / SRE"]))
+    assert found["total_matching"] == 0
+    # The only Gurgaon job is Backend; the DevOps jobs are all in Bengaluru.
+    assert found["if_you_drop"] == {"roles": 1, "cities": 26, "hide_low_pay": 0}
+    one_filter = json.loads(tools.search_jobs(conn, cities=["Chennai"], hide_low_pay=False))
+    assert "if_you_drop" not in one_filter                  # nothing to compare with one filter
+
+
 def test_schema_offers_only_values_in_the_data(conn):
     search = tools.schemas(conn)[0]["function"]["parameters"]["properties"]
     assert search["roles"]["items"]["enum"] == ["Backend", "DevOps / SRE"]

@@ -32,6 +32,9 @@ def main() -> None:
 
     sub.add_parser("rescore", help="re-score stored jobs after editing user_profile.yaml")
     sub.add_parser("health", help="show companies whose last fetch looks wrong")
+    ask = sub.add_parser("ask", help="ask the agent a question about your jobs, and see every step")
+    ask.add_argument("question")
+    ask.add_argument("--max-steps", type=int, default=None)
 
     args = ap.parse_args()
     logging.basicConfig(
@@ -63,6 +66,10 @@ def main() -> None:
     elif args.cmd == "rescore":
         from . import db, pipeline
         print(f"Re-scored {pipeline.rescore(db.connect())} jobs")
+    elif args.cmd == "ask":
+        from . import agent
+        steps = args.max_steps or agent.MAX_STEPS
+        agent.print_result(agent.ask(args.question, max_steps=steps))
     elif args.cmd == "health":
         from . import db, pipeline
         conn = db.connect()

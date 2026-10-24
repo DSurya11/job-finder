@@ -60,6 +60,25 @@ def _pay(job: dict) -> str:
 def _place(job: dict) -> str:
     return ", ".join(job["cities"]) or job.get("location") or ""
 
+# Each filter, and the value that means "not filtering on it".
+_OFF = {
+    "roles": [], "levels": [], "employment_types": [], "cities": [], "remote_only": False,
+    "min_pay_lpa": None, "max_experience_years": None, "posted_within_days": None,
+    "statuses": [], "title_words": None, "description_words": None, "hide_low_pay": False,
+}
+
+
+def _where(f: dict) -> tuple[str, list]:
+    """The table's own filter code, fed from the agent's filter names."""
+    return queries.build_where(
+        q=f["title_words"], role=",".join(f["roles"]), level=",".join(f["levels"]),
+        etype=",".join(f["employment_types"]), city=",".join(f["cities"]), company=None,
+        source=None, status=",".join(f["statuses"]), remote=f["remote_only"], tech=False,
+        salary_min=f["min_pay_lpa"], exp_max=f["max_experience_years"], has_salary=False,
+        new_days=None, pay_filter=None, hide_bad=f["hide_low_pay"], min_score=None,
+        has_description=False, posted_days=f["posted_within_days"], desc=f["description_words"],
+    )
+
 
 # ------------------------------------------------------------------ search_jobs
 
@@ -88,14 +107,14 @@ def search_jobs(
                             "For remote jobs use remote_only instead of a city.")
         canonical += [c for c in found if c not in canonical]
 
-    where, args = queries.build_where(
-        q=title_words, role=",".join(roles), level=",".join(levels),
-        etype=",".join(employment_types), city=",".join(canonical), company=None, source=None,
-        status=",".join(statuses), remote=remote_only, tech=False, salary_min=min_pay_lpa,
-        exp_max=max_experience_years, has_salary=False, new_days=None, pay_filter=None,
-        hide_bad=hide_low_pay, min_score=None, has_description=False,
-        posted_days=posted_within_days, desc=description_words,
-    )
+    filters = {
+        "roles": roles, "levels": levels, "employment_types": employment_types,
+        "cities": canonical, "remote_only": remote_only, "min_pay_lpa": min_pay_lpa,
+        "max_experience_years": max_experience_years, "posted_within_days": posted_within_days,
+        "statuses": statuses, "title_words": title_words, "description_words": description_words,
+        "hide_low_pay": hide_low_pay,
+    }
+    where, args = _where(filters)
     limit = max(1, min(int(limit), MAX_ROWS))
     total, rows = queries.find_jobs(conn, where, args, title_words, SORTS[sort], None, 1, limit)
     jobs = [db.job_to_dict(r) for r in rows]
@@ -114,7 +133,17 @@ def search_jobs(
     if total > len(jobs):
         result["note"] = (f"{total - len(jobs)} more match. Narrow the filters, or raise limit "
                           f"(at most {MAX_ROWS}).")
+    active = [name for name, off in _OFF.items() if filters[name] not in (off, None, "", [])]
+    if total == 0 and len(active) > 1:
+        # Which filter emptied the result is a fact to count, not a guess for the model: on
+        # its first real run it named the wrong one.
+        result["if_you_drop"] = {
+            name: queries.find_jobs(conn, *_where({**filters, name: _OFF[name]}), None, "score", None, 1, 1)[0]
+            for name in active}
+        result["note"] = ("Nothing matches. if_you_drop gives how many jobs would match with that "
+                          "one filter removed.")
     return json.dumps(result, ensure_ascii=False)
+
 
 
 # -------------------------------------------------------------- get_job_details
