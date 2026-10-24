@@ -134,10 +134,7 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
                 {job.est_source === "ambitionbox" || job.est_source === "market" ? (
                   <>{job.est_note} Not exact: the posting does not state pay.{" "}
                     {job.est_url && <a href={job.est_url} target="_blank" rel="noopener" className="underline underline-offset-2">Source</a>}</>
-                ) : job.est_source === "claude"
-                  ? "Estimate by Claude for this role and level at this company. Not exact: the posting does not state pay."
-                  : "Rough guess from the company's general pay tier, the same for every role at this level. Not exact, and not from the posting."}
-                {job.est_source === "claude" && job.brain_note && <span className="block">{job.brain_note}</span>}
+                ) : "Rough guess from the company's general pay tier, the same for every role at this level. Not exact, and not from the posting."}
               </span>
             )}
             {pay.text === "—" && <span className="block text-[12px] text-soft">Not in the posting, and nothing to estimate from.</span>}

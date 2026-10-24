@@ -3,8 +3,8 @@
 These are typical India ranges by company tier and seniority, written from
 general knowledge of what such companies pay. They are NOT taken from the
 posting and are NOT live data from a salary site; the app always labels them
-as rough estimates. `python -m jobfinder brain` replaces them with a per-job
-estimate from Claude when an API key is configured.
+as rough estimates. Pay is never estimated by a language model: when the
+posting is silent, only salaries reported on AmbitionBox or these bands are used.
 
 All figures are total annual pay in lakhs (LPA). Internship figures are the
 monthly stipend times twelve.

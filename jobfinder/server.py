@@ -340,6 +340,7 @@ def ask_jobs(body: AskIn):
     finally:
         conn.close()
     return {"answer": result.answer, "stopped": result.stopped, "steps": result.steps,
+            "total_matching": result.total_matching,
             "tokens_in": result.tokens_in, "tokens_out": result.tokens_out,
             "seconds": result.seconds, "jobs": jobs}
 

@@ -53,8 +53,8 @@ def test_an_empty_search_counts_what_each_filter_costs(conn):
     found = json.loads(tools.search_jobs(conn, cities=["Gurgaon"], roles=["DevOps / SRE"]))
     assert found["total_matching"] == 0
     # The only Gurgaon job is Backend; the DevOps jobs are all in Bengaluru.
-    assert found["if_you_drop"] == {"roles": 1, "cities": 26, "hide_low_pay": 0}
-    one_filter = json.loads(tools.search_jobs(conn, cities=["Chennai"], hide_low_pay=False))
+    assert found["if_you_drop"] == {"roles": 1, "cities": 26, "hide_low_pay": 0, "tech_only": 0}
+    one_filter = json.loads(tools.search_jobs(conn, cities=["Chennai"], hide_low_pay=False, tech_only=False))
     assert "if_you_drop" not in one_filter                  # nothing to compare with one filter
 
 
@@ -71,9 +71,22 @@ def test_schema_offers_only_values_in_the_data(conn):
     assert search["roles"]["items"]["enum"] == ["Backend", "DevOps / SRE"]
 
 
-def test_profile_leaves_personal_details_out(profile_file, conn):
-    text = tools.get_my_profile(conn)
-    assert json.loads(text)["target_pay_lpa"] == 12     # the test profile, not the real one
-    assert json.loads(text)["skills"] == {"primary": ["Python"]}
-    for secret in ("Test Person", "test@example.com", "99999"):
-        assert secret not in text
+def test_profile_comes_in_parts_and_leaves_personal_details_out(profile_file, conn):
+    pay = json.loads(tools.get_my_profile(conn, part="pay_floor"))
+    assert pay["target_pay_lpa"] == 12                   # the test profile, not the real one
+    assert "looking_for" not in pay                       # the pay floor alone: no job type
+    assert json.loads(tools.get_my_profile(conn, part="skills"))["skills"] == {"primary": ["Python"]}
+    assert json.loads(tools.get_my_profile(conn, part="preferences"))["looking_for"] == "full-time"
+    for part in tools.PROFILE_PARTS:
+        text = tools.get_my_profile(conn, part=part)
+        for secret in ("Test Person", "test@example.com", "99999"):
+            assert secret not in text
+    with pytest.raises(tools.ToolError, match="unknown part"):
+        tools.get_my_profile(conn, part="everything")
+
+
+def test_an_empty_date_search_says_how_old_the_data_is(conn):
+    conn.execute("UPDATE jobs SET posted_at = '', first_seen = '2026-09-01T08:00:00Z'")
+    found = json.loads(tools.search_jobs(conn, posted_within_days=7))
+    assert found["total_matching"] == 0
+    assert found["newest_posting_in_data"] == "2026-09-01"

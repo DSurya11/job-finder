@@ -15,7 +15,7 @@ LIST_COLUMNS = (
     "j.employment_type, j.level, j.role, j.is_tech, j.exp_min, j.exp_max, "
     "j.salary_min_lpa, j.salary_max_lpa, j.salary_text, j.apply_url, j.source, "
     "j.posted_at, j.first_seen, j.score, j.pay_verdict, "
-    "j.est_min_lpa, j.est_max_lpa, j.est_source, j.est_note, j.est_url, j.brain_note, "
+    "j.est_min_lpa, j.est_max_lpa, j.est_source, j.est_note, j.est_url, "
     "u.status AS status"
 )
 

@@ -24,9 +24,6 @@ def main() -> None:
     disc.add_argument("seeds")
     disc.add_argument("--write", action="store_true", help="merge results into companies.yaml")
 
-    brain = sub.add_parser("brain", help="have Claude estimate pay and flag fake jobs (needs ANTHROPIC_API_KEY)")
-    brain.add_argument("--limit", type=int, default=300, help="most jobs to assess this run")
-
     portal = sub.add_parser("pay", help="look up pay on AmbitionBox for jobs that do not state it")
     portal.add_argument("--limit", type=int, default=300, help="most salary pages to request this run")
 
@@ -60,9 +57,6 @@ def main() -> None:
     elif args.cmd == "pay":
         from . import portal as portal_module
         print(asyncio.run(portal_module.run(args.limit)))
-    elif args.cmd == "brain":
-        from . import brain as brain_module
-        print(brain_module.run(args.limit))
     elif args.cmd == "rescore":
         from . import db, pipeline
         print(f"Re-scored {pipeline.rescore(db.connect())} jobs")

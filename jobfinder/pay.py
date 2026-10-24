@@ -114,6 +114,4 @@ def judge(job: dict, profile: dict) -> str:
         # never used to hide a job. Judge an estimated range by its middle: a 6-14 LPA range mostly pays under 9.
         middle = ((job.get("est_min_lpa") or job["est_max_lpa"]) + job["est_max_lpa"]) / 2
         return "estimated" if middle >= low_bar else "low"
-    if job.get("brain_flag") in ("unpaid", "suspicious"):
-        return job["brain_flag"]
     return "unknown"

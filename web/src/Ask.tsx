@@ -64,6 +64,11 @@ export function AskAnswer({ result, error, busy, onExample }: {
     <div className="border-b border-rule px-3 py-2">
       <p className="max-w-[80ch] text-[13px] leading-relaxed text-ink">{result.answer}</p>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[11.5px] text-faint">
+        {result.total_matching != null && (
+          <span className="num text-soft">
+            {result.total_matching.toLocaleString("en-IN")} match · showing {result.jobs.length} ·
+          </span>
+        )}
         <span className="num">
           {calls} {calls === 1 ? "call" : "calls"} · {result.seconds}s · {(result.tokens_in + result.tokens_out).toLocaleString("en-IN")} tokens
         </span>

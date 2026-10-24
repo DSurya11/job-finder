@@ -24,12 +24,11 @@ export type Job = {
   pay_verdict: string;
   est_min_lpa: number | null;
   est_max_lpa: number | null;
-  est_source: "band" | "claude" | "ambitionbox" | "market" | null;
+  est_source: "band" | "ambitionbox" | "market" | null;
   est_note: string | null;
   est_url: string | null;
   openings?: number;
   others?: { id: string; location: string; apply_url: string }[];
-  brain_note: string | null;
   snippet?: string;
   description?: string;
   departments?: string;
@@ -142,6 +141,8 @@ export type AskStep =
   | { kind: "error"; step: number; error: string };
 export type AskResult = {
   answer: string; stopped: "answered" | "step_limit" | "token_budget" | "error";
+  /** From the agent's last search, counted by the database: not the model's claim. */
+  total_matching: number | null;
   steps: AskStep[]; tokens_in: number; tokens_out: number; seconds: number; jobs: Job[];
 };
 

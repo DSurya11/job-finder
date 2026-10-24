@@ -144,6 +144,9 @@ SLOW_KINDS = {"linkedin": (1, 1.5, 400)}   # kind -> (concurrency, pause seconds
 def _apply(job: dict, detail: dict, profile: dict) -> dict | None:
     """Merge a detail response into a job row. None means 'not an India job'."""
     description = enrich.html_to_text(detail.get("description_html")) or job.get("description") or ""
+    stipend = detail.get("stipend_text")
+    if stipend is not None:
+        description = f"Stipend: {stipend}\n{description}"     # "Unpaid" must stay readable
     location = detail.get("location") or job.get("location") or ""
     place = enrich.locate(location)
     if job.get("scope") == "unknown" and place["scope"] in ("abroad", "unknown"):
@@ -157,10 +160,18 @@ def _apply(job: dict, detail: dict, profile: dict) -> dict | None:
     exp_min, exp_max = enrich.parse_experience(description)
     raw_type = detail.get("employment_type") or job.get("employment_type")
     employment = enrich.classify_employment(raw_type, job["title"])
-    salary = enrich.parse_salary(description, detail.get("salary_struct"))
-    if salary["max_lpa"] is None and job.get("salary_max_lpa") is not None:
-        # The listing stated pay (e.g. an Internshala stipend) that the detail page
-        # does not repeat; keep it rather than blanking it.
+    if stipend is not None:
+        # The posting's own stipend field is its pay, and the only text searched for it:
+        # an "Unpaid" stipend must not fall through to the after-internship salary below.
+        salary = enrich.parse_salary(stipend)
+        salary["text"] = salary["text"] or stipend             # "Unpaid", "Performance based"
+    else:
+        salary = enrich.parse_salary(description, detail.get("salary_struct"))
+    if stipend is None and job.get("salary_max_lpa") is not None and not detail.get("salary_struct"):
+        # Pay the listing states (e.g. an Internshala stipend) beats a figure found in the
+        # detail page's free text: that text also mentions the salary of the job offered
+        # after an internship, and parsing it once turned "₹10,000-18,000 /month" into
+        # "18 LPA". Only a structured salary from the detail page replaces it.
         salary = {"min_lpa": job["salary_min_lpa"], "max_lpa": job["salary_max_lpa"],
                   "text": job.get("salary_text") or ""}
     job.update(

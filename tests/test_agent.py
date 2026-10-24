@@ -130,3 +130,18 @@ def test_markdown_markers_are_removed_from_the_answer(conn):
     fake = FakeClient(reply(SEARCH), reply(("give_answer", {
         "answer": "## Best\n**Acme** fits __well__.", "job_ids": ["k1"]})))
     assert agent.ask("q", conn=conn, client=fake).answer == "Best\nAcme fits well."
+
+
+def test_the_total_comes_from_the_search_not_the_model(conn):
+    fake = FakeClient(reply(SEARCH), reply(("give_answer", {"answer": "Lots!", "job_ids": ["k1"]})))
+    result = agent.ask("q", conn=conn, client=fake)
+    assert (result.total_matching, len(result.job_ids)) == (2, 1)
+
+
+def test_a_rate_limit_is_explained_in_plain_words(conn):
+    from openai import RateLimitError
+    request = httpx.Request("POST", "http://127.0.0.1:20130/v1/chat/completions")
+    limited = RateLimitError("429 cooling down", response=httpx.Response(429, request=request), body=None)
+    result = agent.ask("q", conn=conn, client=FakeClient(limited))
+    assert "rate-limiting right now" in result.answer
+    assert "429" not in result.answer and "429" in result.steps[-1]["error"]

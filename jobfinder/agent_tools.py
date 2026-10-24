@@ -55,7 +55,6 @@ PAY_SOURCES = {
     "ambitionbox": "estimate from salaries reported at this company (AmbitionBox)",
     "band": "rough guess from the company's pay tier",
     "market": "India-wide average for this role across all companies, NOT this company's pay",
-    "claude": "AI estimate",
 }
 
 
@@ -81,7 +80,7 @@ _OFF = {
     "roles": [], "levels": [], "employment_types": [], "cities": [], "remote_only": False,
     "min_pay_lpa": None, "max_experience_years": None, "posted_within_days": None,
     "statuses": [], "title_words": None, "description_words": None, "description_any": [],
-    "hide_low_pay": False,
+    "hide_low_pay": False, "tech_only": False,
 }
 
 
@@ -90,7 +89,7 @@ def _where(f: dict) -> tuple[str, list]:
     return queries.build_where(
         q=f["title_words"], role=",".join(f["roles"]), level=",".join(f["levels"]),
         etype=",".join(f["employment_types"]), city=",".join(f["cities"]), company=None,
-        source=None, status=",".join(f["statuses"]), remote=f["remote_only"], tech=False,
+        source=None, status=",".join(f["statuses"]), remote=f["remote_only"], tech=f["tech_only"],
         salary_min=f["min_pay_lpa"], exp_max=f["max_experience_years"], has_salary=False,
         new_days=None, pay_filter=None, hide_bad=f["hide_low_pay"], min_score=None,
         has_description=False, posted_days=f["posted_within_days"], desc=f["description_words"],
@@ -107,7 +106,7 @@ def search_jobs(
     max_experience_years: float | None = None, posted_within_days: int | None = None,
     statuses: list[str] | None = None, title_words: str | None = None,
     description_words: str | None = None, description_any: list[str] | None = None,
-    hide_low_pay: bool = True,
+    hide_low_pay: bool = True, tech_only: bool = True,
     sort: str = "best_fit", limit: int = 10,
 ) -> str:
     roles = _check("roles", roles, _choices(conn, "role"))
@@ -132,6 +131,7 @@ def search_jobs(
         "max_experience_years": max_experience_years, "posted_within_days": posted_within_days,
         "statuses": statuses, "title_words": title_words, "description_words": description_words,
         "description_any": description_any or [], "hide_low_pay": hide_low_pay,
+        "tech_only": tech_only,
     }
     where, args = _where(filters)
     limit = max(1, min(int(limit), MAX_ROWS))
@@ -161,6 +161,11 @@ def search_jobs(
             for name in active}
         result["note"] = ("Nothing matches. if_you_drop gives how many jobs would match with that "
                           "one filter removed.")
+    if total == 0 and posted_within_days:
+        # "Nothing this week" is often the data being old, not the market being empty.
+        newest = conn.execute("SELECT MAX(COALESCE(NULLIF(posted_at, ''), substr(first_seen, 1, 10))) "
+                              "FROM jobs WHERE is_active = 1").fetchone()[0]
+        result["newest_posting_in_data"] = newest
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -186,7 +191,7 @@ def get_job_details(conn: sqlite3.Connection, *, job_id: str) -> str:
         "place": _place(job), "remote": job["is_remote"], "level": job["level"],
         "role": job["role"], "type": job["employment_type"], "experience": experience,
         "pay": _pay(job), "pay_text_in_posting": job.get("salary_text") or "",
-        "pay_estimate_note": job.get("est_note") or job.get("brain_note") or "",
+        "pay_estimate_note": job.get("est_note") or "",
         "posted": job.get("posted_at") or (job.get("first_seen") or "")[:10],
         "status": job.get("status") or "", "fit_score": _fit(job["score"]),
         "fit_reasons": job["score_reasons"], "apply_url": job.get("apply_url") or "",
@@ -197,24 +202,34 @@ def get_job_details(conn: sqlite3.Connection, *, job_id: str) -> str:
 
 # --------------------------------------------------------------- get_my_profile
 
-def get_my_profile(conn: sqlite3.Connection) -> str:
+PROFILE_PARTS = ("pay_floor", "skills", "preferences")
+
+
+def get_my_profile(conn: sqlite3.Connection, *, part: str) -> str:
+    """One part of the profile at a time. Handed everything, the model used it: asked for
+    entry-level jobs above the pay floor, it swapped in the user's internship preference.
+    Name, email, phone and the rest of "personal" are never returned: everything returned
+    here is sent to the model's provider."""
     raw = score.load_profile()["raw"]
     prefs = raw.get("job_preferences") or {}
-    education = raw.get("education") or {}
-    # Only what judging a job needs. Name, email, phone and the rest of "personal" stay
-    # on this laptop: everything returned here is sent to the model's provider.
-    return json.dumps({
-        "skills": raw.get("skills") or {},
-        "education": {"degree": education.get("degree"), "year": education.get("year")},
-        "looking_for": prefs.get("type"),
-        "levels": prefs.get("levels"),
-        "preferred_locations": prefs.get("preferred_locations"),
-        "roles": prefs.get("roles"),
-        "min_pay_lpa": prefs.get("min_lpa"),
-        "target_pay_lpa": prefs.get("target_lpa"),
-        "min_stipend_per_month": prefs.get("min_stipend_per_month"),
-        "pay_note": "Internship stipends are compared as 12 x the monthly stipend, in LPA.",
-    }, ensure_ascii=False)
+    if part == "pay_floor":
+        return json.dumps({
+            "min_pay_lpa": prefs.get("min_lpa"), "target_pay_lpa": prefs.get("target_lpa"),
+            "min_stipend_per_month": prefs.get("min_stipend_per_month"),
+            "note": "Internship stipends are compared as 12 x the monthly stipend, in LPA.",
+        }, ensure_ascii=False)
+    if part == "skills":
+        education = raw.get("education") or {}
+        return json.dumps({
+            "skills": raw.get("skills") or {},
+            "education": {"degree": education.get("degree"), "year": education.get("year")},
+        }, ensure_ascii=False)
+    if part == "preferences":
+        return json.dumps({
+            "looking_for": prefs.get("type"), "levels": prefs.get("levels"),
+            "preferred_locations": prefs.get("preferred_locations"), "roles": prefs.get("roles"),
+        }, ensure_ascii=False)
+    raise ToolError(f"unknown part '{part}'. Allowed: {list(PROFILE_PARTS)}")
 
 
 # ---------------------------------------------------------------------- schemas
@@ -256,6 +271,10 @@ def schemas(conn: sqlite3.Connection) -> list[dict]:
                                                        "'FastAPI or Django' is ['fastapi', 'django']. A phrase stays one item."},
                     "hide_low_pay": {"type": "boolean",
                                      "description": "Hide low-pay, unpaid and fake-looking jobs. Default true."},
+                    "tech_only": {"type": "boolean",
+                                  "description": "Tech roles only, like the user's job table. Default true; "
+                                                 "set false only when the question is about non-tech work "
+                                                 "(sales, marketing, finance, HR, support)."},
                     "sort": {"type": "string", "enum": list(SORTS)},
                     "limit": {"type": "integer", "minimum": 1, "maximum": MAX_ROWS},
                 },
@@ -277,10 +296,16 @@ def schemas(conn: sqlite3.Connection) -> list[dict]:
         {"type": "function", "function": {
             "name": "get_my_profile",
             "description": (
-                "The user's skills, degree, what they are looking for, preferred places and "
-                "pay floor (min_pay_lpa). Use it for 'my minimum', 'my skills', 'suits me'."
+                "One part of the user's profile. pay_floor: their minimum and target pay "
+                "('my minimum'). skills: skills and degree ('my skills', 'suits me'). "
+                "preferences: the job type, levels, places and roles they prefer; ask for it "
+                "only when the question is about what they prefer."
             ),
-            "parameters": {"type": "object", "properties": {}},
+            "parameters": {
+                "type": "object",
+                "properties": {"part": {"type": "string", "enum": list(PROFILE_PARTS)}},
+                "required": ["part"],
+            },
         }},
     ]
 
