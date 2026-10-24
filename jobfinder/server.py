@@ -68,9 +68,9 @@ def get_job(job_id: str):
             raise HTTPException(404, "job not found")
         job = db.job_to_dict(row)
         job["others"] = [dict(r) for r in conn.execute(
-            "SELECT id, location, apply_url FROM jobs WHERE is_active=1 AND company=? "
-            "AND lower(title)=lower(?) AND level=? AND id != ? ORDER BY location LIMIT 40",
-            (job["company"], job["title"], job["level"], job_id),
+            "SELECT id, location, apply_url FROM jobs WHERE is_active=1 AND grp=? AND id != ? "
+            "ORDER BY location LIMIT 40",
+            (job["grp"], job_id),
         )]
         return job
     finally:
@@ -94,8 +94,7 @@ def set_state(job_id: str, body: StateIn):
             # Dismissing a row dismisses every posting it stands for.
             conn.execute(
                 "INSERT INTO user_state (job_id, status, notes, updated_at) "
-                "SELECT o.id, 'hidden', '', ? FROM jobs j JOIN jobs o ON o.company = j.company "
-                "AND lower(o.title) = lower(j.title) AND o.level = j.level WHERE j.id = ? "
+                "SELECT o.id, 'hidden', '', ? FROM jobs j JOIN jobs o ON o.grp = j.grp WHERE j.id = ? "
                 "ON CONFLICT(job_id) DO UPDATE SET status='hidden', updated_at=excluded.updated_at",
                 (db.now(), job_id),
             )

@@ -8,6 +8,8 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import enrich
+
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "jobs.db"
 
 SCHEMA = """
@@ -134,11 +136,18 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
             conn.execute(f"ALTER TABLE jobs ADD COLUMN {column} {kind}")
     # Jobs closed before closed_at existed: the last time they were seen is the best guess.
     conn.execute("UPDATE jobs SET closed_at = last_seen WHERE is_active = 0 AND closed_at IS NULL")
-    # One table row per company, title and level. Stored as an indexed generated
-    # column because the list and every filter count group by it.
-    if "grp" not in {r["name"] for r in conn.execute("PRAGMA table_xinfo(jobs)")}:
-        conn.execute("ALTER TABLE jobs ADD COLUMN grp TEXT GENERATED ALWAYS AS "
-                     "(company || '|' || lower(title) || '|' || level) VIRTUAL")
+    # One table row per group (enrich.group_key), indexed because the list and every
+    # filter count group by it. It was once a generated column of the exact company,
+    # title and level; SQLite cannot change one, so an old database is converted here.
+    columns = {r["name"]: r["hidden"] for r in conn.execute("PRAGMA table_xinfo(jobs)")}
+    if columns.get("grp") in (2, 3):                  # 2, 3: a generated column
+        conn.execute("DROP INDEX IF EXISTS idx_jobs_grp")
+        conn.execute("ALTER TABLE jobs DROP COLUMN grp")
+        columns.pop("grp")
+    if "grp" not in columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN grp TEXT")
+        refresh_groups(conn)
+        conn.commit()
     conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_grp ON jobs(is_active, grp)")
     _READY.add(str(path))
     return conn
@@ -180,8 +189,24 @@ def upsert_jobs(conn: sqlite3.Connection, jobs: list[dict], seen_at: str) -> int
                 f"VALUES ({', '.join(':' + c for c in JOB_COLUMNS)}, :seen, :seen, 1)",
                 {**{c: row.get(c) for c in JOB_COLUMNS}, "seen": seen_at},
             )
+    # From what is now stored: a listing refresh may have kept the detail page's level.
+    refresh_groups(conn, [job["id"] for job in jobs])
     conn.commit()
     return new
+
+
+def refresh_groups(conn: sqlite3.Connection, ids: list[str] | None = None) -> None:
+    """Recompute grp, the table's one-row-per-job key, for these jobs (all when None)."""
+    if ids is None:
+        rows = conn.execute("SELECT id, company, title, level FROM jobs").fetchall()
+    else:
+        rows = []
+        for start in range(0, len(ids), 500):          # stay under SQLite's variable limit
+            chunk = ids[start:start + 500]
+            rows += conn.execute(f"SELECT id, company, title, level FROM jobs WHERE id IN "
+                                 f"({','.join('?' * len(chunk))})", chunk).fetchall()
+    conn.executemany("UPDATE jobs SET grp = ? WHERE id = ?",
+                     [(enrich.group_key(r[1], r[2], r[3]), r[0]) for r in rows])
 
 
 # Fields the detail page fills in; a later listing-only pass leaves them alone.

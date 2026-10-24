@@ -42,14 +42,6 @@ def load_companies(path: Path | str | None = None) -> list[dict]:
     return [c for c in data.get("companies", []) if c.get("enabled", True)]
 
 
-def match_key(company: str, title: str) -> str:
-    """Loose identity used to drop an aggregator copy of a job we already have."""
-    norm = lambda t: re.sub(r"[^a-z0-9]+", "", t.lower())
-    company = re.sub(r"\b(india|pvt|private|ltd|limited|inc|llc|technologies|technology|"
-                     r"labs|software|corporation|corp|group)\b\.?", "", company.lower())
-    return f"{norm(company)}|{norm(title)}"
-
-
 def job_id(company: str, raw: dict) -> str:
     key = raw.get("apply_url") or f"{raw.get('title')}|{raw.get('location')}"
     return hashlib.sha1(f"{company.lower()}|{key}".encode()).hexdigest()[:16]
@@ -198,11 +190,11 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
                 if direct_keys is None:
                     marks = ",".join("?" * len(AGGREGATORS))
                     direct_keys = {
-                        match_key(r["company"], r["title"]) for r in conn.execute(
+                        enrich.match_key(r["company"], r["title"]) for r in conn.execute(
                             f"SELECT company, title FROM jobs WHERE is_active=1 "
                             f"AND source NOT IN ({marks})", tuple(AGGREGATORS))
                     }
-                jobs = [j for j in jobs if match_key(j["company"], j["title"]) not in direct_keys]
+                jobs = [j for j in jobs if enrich.match_key(j["company"], j["title"]) not in direct_keys]
             ok = not res["error"]
             status = health_status(ok, len(res["raw"]), len(jobs), previous.get(company["name"]))
             new_total += db.upsert_jobs(conn, jobs, started)

@@ -246,6 +246,7 @@ async def fetch_pending_details(client: httpx.AsyncClient, conn, profile: dict) 
              merged.get("est_min_lpa"), merged.get("est_max_lpa"), merged.get("est_source"),
              job["id"]),
         )
+        db.refresh_groups(conn, [job["id"]])           # the detail page may change the level
         done += 1
         # Commit per job: a long-open write transaction would block the web
         # app from saving application status while a refresh is running.

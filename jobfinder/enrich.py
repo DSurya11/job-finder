@@ -284,6 +284,29 @@ def parse_experience(text: str | None) -> tuple[float | None, float | None]:
     return None, None
 
 
+# ── Identity: when two postings are the same job ────────────────────────────
+
+_COMPANY_SUFFIX = re.compile(r"\b(india|pvt|private|ltd|limited|inc|llc|technologies|technology|"
+                             r"labs|software|corporation|corp|group)\b\.?", re.I)
+
+
+def _squash(text: str) -> str:
+    """Lowercase letters and digits only; "C++" and "C#" stay apart from "C"."""
+    text = (text or "").lower().replace("+", " plus ").replace("#", " sharp ")
+    return re.sub(r"[^a-z0-9]+", "", text)
+
+
+def match_key(company: str, title: str) -> str:
+    """Loose identity used to drop an aggregator copy of a job we already have."""
+    return f"{_squash(_COMPANY_SUFFIX.sub('', company or ''))}|{_squash(title)}"
+
+
+def group_key(company: str, title: str, level: str | None) -> str:
+    """The table shows one row per group: "Software Engineer II" and "Software Engineer-II"
+    at "NEC Software Solutions" and "NEC Software Solutions (India)" are one row."""
+    return f"{match_key(company, title)}|{level or ''}"
+
+
 # ── Role family, seniority, employment type ──────────────────────────────────
 
 _ROLE_RULES: list[tuple[str, bool, re.Pattern]] = [
