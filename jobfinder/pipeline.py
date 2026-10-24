@@ -274,13 +274,15 @@ def rescore(conn) -> int:
     """Re-score every stored job and redo its pay verdict, e.g. after the profile changes.
 
     Returns how many jobs were re-scored. Commits in batches, so the web app can still
-    save while this runs.
+    save while this runs, and counts them in PROGRESS for the app to show.
     """
     profile = score.load_profile()
     rows = conn.execute("SELECT * FROM jobs").fetchall()
+    PROGRESS.update(done=0, total=len(rows))
     for n, row in enumerate(rows, 1):
         if n % 500 == 0:
             conn.commit()
+            PROGRESS["done"] = n
         job = db.job_to_dict(row)
         pay.apply_band(job)
         job["pay_verdict"] = pay.judge(job, profile)
@@ -291,4 +293,5 @@ def rescore(conn) -> int:
             (value, json.dumps(reasons), job["pay_verdict"], job.get("est_min_lpa"),
              job.get("est_max_lpa"), job.get("est_source"), job["id"]))
     conn.commit()
+    PROGRESS["done"] = len(rows)
     return len(rows)

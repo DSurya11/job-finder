@@ -140,20 +140,30 @@ def get_pay_floors():
 
 @app.put("/api/settings/pay")
 def set_pay_floors(body: PayFloorsIn):
-    """Change the pay floors in user_profile.yaml, then re-score every job against them."""
+    """Change the pay floors in user_profile.yaml, then re-score every job in the background.
+
+    Re-scoring 20,000+ jobs takes over a minute, too long to hold a request open. It reports
+    through the same progress record as a refresh, so the app shows it and reloads at the end.
+    """
     if pipeline.PROGRESS["running"]:
         # A refresh re-scores as it goes; two writers would leave a mix of old and new floors.
-        raise HTTPException(409, "a refresh is running: save the pay floor when it ends")
+        raise HTTPException(409, "a refresh or re-score is running: save when it ends")
     try:
         score.save_pay_floors(body.min_lpa, body.target_lpa)
     except ValueError as error:
         raise HTTPException(400, str(error))
+    pipeline.PROGRESS.update(running=True, done=0, total=0, current="re-scoring")
+    threading.Thread(target=_rescore_in_background, name="rescore", daemon=True).start()
+    return {**get_pay_floors(), "rescoring": True}
+
+
+def _rescore_in_background() -> None:
     conn = db.connect()
     try:
-        rescored = pipeline.rescore(conn)
+        pipeline.rescore(conn)
     finally:
         conn.close()
-    return {**get_pay_floors(), "rescored": rescored}
+        pipeline.PROGRESS.update(running=False, current="")
 
 
 @app.get("/api/facets")

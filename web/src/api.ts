@@ -124,8 +124,8 @@ export const buildPrompt = (job_ids: string[]) =>
 export type PayFloors = { min_lpa: number; target_lpa: number };
 export const fetchPayFloors = () => json<PayFloors>("/api/settings/pay");
 
-/** Saves the floors to user_profile.yaml and re-scores every job; a few seconds. */
-export async function savePayFloors(floors: PayFloors): Promise<PayFloors & { rescored: number }> {
+/** Saves the floors to user_profile.yaml; the server then re-scores every job in the background. */
+export async function savePayFloors(floors: PayFloors): Promise<PayFloors & { rescoring: boolean }> {
   const res = await fetch("/api/settings/pay", {
     method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(floors),
   });

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { EASE, NumberTicker } from "./fx";
-import { emptyFilters, type Facet, type Facets, type Filters } from "./api";
+import { emptyFilters, fetchPayFloors, savePayFloors, type Facet, type Facets, type Filters, type PayFloors } from "./api";
 
 /** A top-bar button that opens a small panel beneath it. */
 function Menu({ label, count, align = "left", children }: {
@@ -125,6 +125,62 @@ function Steps<T extends number | null>({ title, steps, value, onChange, label }
   );
 }
 
+/** The pay floors from user_profile.yaml. Saving rewrites them there and re-scores every job. */
+function PayFloor({ onSaved }: { onSaved: () => void }) {
+  const [saved, setSaved] = useState<PayFloors | null>(null);
+  const [min, setMin] = useState("");
+  const [target, setTarget] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    fetchPayFloors().then((f) => { setSaved(f); setMin(String(f.min_lpa)); setTarget(String(f.target_lpa)); })
+      .catch(() => setError("Could not read the pay floor"));
+  }, []);
+  if (!saved) return error ? <div className="px-1 py-1 text-[11.5px] text-bad">{error}</div> : null;
+  const dirty = Number(min) !== saved.min_lpa || Number(target) !== saved.target_lpa;
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const next = await savePayFloors({ min_lpa: Number(min), target_lpa: Number(target) });
+      setSaved(next);
+      setDone(true);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const box = "num w-12 rounded-[3px] border border-rule bg-transparent px-1 py-0.5 text-[12px] text-ink outline-none focus:border-mark";
+  return (
+    <div className="mb-1 border-b border-rule px-1 pb-2 pt-1">
+      <div className="label mb-1">Your pay floor (LPA)</div>
+      <div className="flex items-center gap-1.5 text-[12px] text-soft">
+        <label className="flex items-center gap-1">Min
+          <input type="number" min={1} step={0.5} value={min} onChange={(e) => setMin(e.target.value)} className={box} />
+        </label>
+        <label className="flex items-center gap-1">Target
+          <input type="number" min={1} step={0.5} value={target} onChange={(e) => setTarget(e.target.value)} className={box} />
+        </label>
+        <button
+          onClick={save} disabled={!dirty || saving}
+          className={`ml-auto rounded-[3px] border px-1.5 py-0.5 text-[11.5px] ${
+            dirty && !saving ? "border-mark bg-mark text-sheet" : "border-rule text-faint"
+          }`}
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+      </div>
+      {error && <div className="mt-1 text-[11.5px] text-bad">{error}</div>}
+      {done && !dirty && !error && (
+        <div className="mt-1 text-[11.5px] text-soft">Saved. Every job is being re-scored (about a minute); the table reloads when it ends.</div>
+      )}
+    </div>
+  );
+}
+
 const LEVEL_ORDER = ["Intern", "Entry", "Mid", "Senior", "Staff+", "Manager", "Unspecified"];
 const PAY_LABEL: Record<string, string> = {
   target: "Meets target", ok: "Meets minimum", estimated: "Estimate meets minimum",
@@ -138,8 +194,8 @@ const POSTED: [number | null, string][] = [
   [14, "Last 14 days"], [30, "Last 30 days"], [90, "Last 3 months"],
 ];
 
-export default function FilterBar({ facets, filters, onChange }: {
-  facets: Facets | null; filters: Filters; onChange: (f: Filters) => void;
+export default function FilterBar({ facets, filters, onChange, onPaySaved }: {
+  facets: Facets | null; filters: Filters; onChange: (f: Filters) => void; onPaySaved: () => void;
 }) {
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) => onChange({ ...filters, [key]: value });
   if (!facets) return null;
@@ -162,6 +218,7 @@ export default function FilterBar({ facets, filters, onChange }: {
         <Options options={facets.city} selected={filters.city} onChange={(v) => set("city", v)} searchable />
       </Menu>
       <Menu label="Pay" count={payCount}>
+        <PayFloor onSaved={onPaySaved} />
         <Check label="Hide low-pay, unpaid and fake" on={filters.hide_bad} onChange={(v) => set("hide_bad", v)} />
         <Steps title="Low end of pay at least (LPA)" steps={[null, 6, 9, 12, 15, 20, 30]} value={filters.salary_min}
           onChange={(v) => set("salary_min", v)} label={(v) => (v == null ? "Any" : `${v}`)} />

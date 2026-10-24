@@ -43,7 +43,7 @@ Keyboard: `j` / `k` move, `o` opens the posting, `s` shortlists, `a` marks appli
 
 ## Pay checks
 
-Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa: 9`, `target_lpa: 12`; an internship's stipend is annualised and held to the same floor, so 75,000 a month, unless you set `min_stipend_per_month`):
+Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa: 12`, `target_lpa: 18`; an internship's stipend is annualised and held to the same floor, so 1,00,000 a month, unless you set `min_stipend_per_month`):
 
 | Verdict | Meaning |
 |---|---|
@@ -53,6 +53,20 @@ Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa
 | Looks fake | An aggregator listing that asks the candidate for a fee or deposit |
 | Estimate meets minimum | Pay not stated; the estimate reaches your floor |
 | Not stated | No pay in the posting and no basis for an estimate |
+
+### Changing your pay floor
+
+**In the app:** open the **Pay** menu. The top row, *Your pay floor (LPA)*, has **Min** and **Target**: change either and press **Save**. The new numbers are written into `user_profile.yaml` (only those two lines; your comments stay), then every job is re-scored in the background. That takes about a minute and a half for ~23,000 jobs; the rail shows *Re-scoring n/total* and the table reloads when it ends. A minimum above the target is refused with a message, and nothing is saved while a refresh is running.
+
+**By hand:** edit `min_lpa` / `target_lpa` under `job_preferences` in `user_profile.yaml`, then re-score:
+
+```bash
+.venv/bin/python -m jobfinder rescore
+```
+
+**Over the API:** `GET /api/settings/pay` reads the floors; `PUT /api/settings/pay` with `{"min_lpa": 12, "target_lpa": 18}` saves them and starts the re-score.
+
+All three change the same two lines, so the file, the app and the Ask agent (which reads your profile on every question) always agree.
 
 Low-pay, unpaid and fake listings are hidden by default; the **Hide low-pay, unpaid and fake** switch shows them again.
 

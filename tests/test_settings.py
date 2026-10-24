@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -23,6 +25,13 @@ def api(tmp_path, monkeypatch, profile_file):
     return TestClient(server.app)
 
 
+def _wait_for_rescore(timeout: float = 10) -> None:
+    deadline = time.monotonic() + timeout
+    while pipeline.PROGRESS["running"]:
+        assert time.monotonic() < deadline, "the background re-score did not finish"
+        time.sleep(0.02)
+
+
 def _verdicts() -> dict:
     conn = db.connect()
     try:
@@ -36,8 +45,10 @@ def test_saving_the_floors_rescores_every_job(api):
     assert _verdicts() == {"ten": "ok", "fifteen": "target"}
 
     saved = api.put("/api/settings/pay", json={"min_lpa": 12, "target_lpa": 18}).json()
+    assert saved == {"min_lpa": 12, "target_lpa": 18, "rescoring": True}   # answers at once
+    _wait_for_rescore()
 
-    assert saved == {"min_lpa": 12, "target_lpa": 18, "rescored": 2}
+    assert pipeline.PROGRESS["done"] == pipeline.PROGRESS["total"] == 2
     assert _verdicts() == {"ten": "low", "fifteen": "ok"}
     assert api.get("/api/settings/pay").json() == {"min_lpa": 12, "target_lpa": 18}
 
@@ -45,6 +56,7 @@ def test_saving_the_floors_rescores_every_job(api):
 def test_saving_keeps_the_rest_of_the_profile_and_its_comments(api, profile_file):
     before = profile_file.read_text(encoding="utf-8")
     api.put("/api/settings/pay", json={"min_lpa": 12.5, "target_lpa": 18})
+    _wait_for_rescore()
     after = profile_file.read_text(encoding="utf-8")
     assert "  min_lpa: 12.5                     # below this a full-time job is marked low pay" in after
     assert "  target_lpa: 18                 # what you are aiming for" in after

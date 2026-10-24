@@ -234,7 +234,7 @@ export default function App() {
             className="block text-left hover:text-ink disabled:text-faint"
           >
             {/* After the boards comes the long pass over job descriptions; say so, or the count just sits at the total. */}
-            {running ? <span className="num">{progress?.current === "job descriptions" ? "Fetching descriptions" : progress?.total ? `Fetching ${progress.done}/${progress.total}` : "Fetching…"}</span> : "Refresh jobs"}
+            {running ? <span className="num">{progress?.current === "re-scoring" ? `Re-scoring ${progress.done}/${progress.total}` : progress?.current === "job descriptions" ? "Fetching descriptions" : progress?.total ? `Fetching ${progress.done}/${progress.total}` : "Fetching…"}</span> : "Refresh jobs"}
           </button>
           <button onClick={() => setShowKeys(true)} className="block hover:text-ink">Shortcuts <kbd>?</kbd></button>
         </div>
@@ -255,7 +255,11 @@ export default function App() {
             />
             <kbd className="absolute right-1.5 top-[6px]">/</kbd>
           </div>
-          {(view === "all" || view === "new") && <FilterBar facets={facets} filters={filters} onChange={setFilters} />}
+          {(view === "all" || view === "new") && <FilterBar facets={facets} filters={filters} onChange={setFilters} onPaySaved={() => {
+            // The re-score runs on the server; the progress poll above reloads the table when it ends.
+            setProgress({ running: true, done: 0, total: 0, current: "re-scoring" });
+            setVersion((v) => v + 1);
+          }} />}
           <p className="ml-auto whitespace-nowrap text-[12px] text-soft">
             {view !== "coverage" && <><NumberTicker value={total} className="num text-ink" /> shown · </>}
             <NumberTicker value={facets?.rows.new ?? 0} className="num text-ink" /> new since yesterday
