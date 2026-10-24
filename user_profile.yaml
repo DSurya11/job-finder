@@ -15,26 +15,41 @@ personal:
 education:
   degree: "B.Tech CSE"
   institution: "PDPM IIITDM Jabalpur"
-  year: "3rd year (2023–2027 batch)"
+  year: "Final year (2023–2027 batch), graduating May 2027"
   gpa: "8.1 CPI"
 
 skills:
+  # Scoring: each primary skill a job mentions counts 3, others 1.5 (three primary = full marks).
+  # Drafted from the resume, 2026-10-24.
   primary:
+    - Kubernetes
+    - Docker
+    - Terraform
+    - AWS
+    - Helm
+    - Argo CD
+    - GitHub Actions
+    - Jenkins
     - Python
+    - Linux
+  secondary:
+    - CI/CD
+    - GitOps
+    - Prometheus
+    - Grafana
+    - Bash
     - FastAPI
     - PostgreSQL
-    - SQLAlchemy
-    - REST APIs
-  secondary:
+    - Redis
+    - Backstage
+    - Kyverno
+    - Trivy
+    - Playwright
+    - Robot Framework
+    - pytest
+    - SQL
+    - TypeScript
     - Node.js
-    - Express.js
-    - React
-    - Django
-    - MySQL
-    - MongoDB
-    - Docker
-    - Git
-    - Swagger / OpenAPI
   ml_ai:
     - Scikit-learn
     - XGBoost
@@ -42,12 +57,20 @@ skills:
     - Keras
     - NumPy
     - Pandas
+    - LLM
   competitive_programming:
-    - "LeetCode Knight (1930+ rating, 750+ problems)"
-    - "Codeforces Pupil (1266 rating)"
-    - "CodeChef 3-star"
+    - "LeetCode Knight (1980, top 2.93%, 835 solved)"
+    - "Codeforces Pupil (1262)"
+    - "CodeChef 3-star (peak 1613)"
 
 experience:
+  - role: "R&D Intern, AMS QA team"
+    company: "Airspan Networks"
+    duration: "Jul 2026 – present"
+    highlights:
+      - "Deployed AMS (3 editions) with Helm on Kubernetes; diagnosed failing services from events and logs"
+      - "Ran release regression suites in Jenkins; automated 116 tests in Robot Framework and Playwright"
+      - "Built a 4G/5G radio-node simulator in Python (asyncio), PostgreSQL and Docker"
   - role: "Backend Contributor"
     company: "Fusion IIITDMJ (Open Source)"
     duration: "2024"
@@ -56,23 +79,35 @@ experience:
       - "Security hardening and UML documentation"
 
 projects:
-  - name: "Credit Risk Prediction"
-    tech: "FastAPI + PostgreSQL + Scikit-learn + Docker"
-    description: "Deployed on Render — 98.1% accuracy Random Forest model"
-    url: ""
+  - name: "Internal Developer Platform on AWS"
+    tech: "Terraform, AWS EKS, Argo CD, Backstage, GitHub Actions, Kyverno, Prometheus, Grafana"
+    description: "Layered Terraform, GitOps with Argo CD, signed CI with SLSA provenance, Backstage templates"
+    url: "https://github.com/surya-idp"
+  - name: "Tachyon News"
+    tech: "Python, Playwright, FastAPI, PostgreSQL, systemd, React, GitHub Actions"
+    description: "Hourly 6-stage news pipeline with LLM extraction checked against each article"
+    url: "https://github.com/DSurya11/tachyon-news"
+  - name: "MockMate"
+    tech: "React, Node.js, FastAPI, PostgreSQL, Redis, BullMQ, Docker, Prometheus, Grafana"
+    description: "AI mock interview platform, 8-service Docker Compose system"
+    url: "https://github.com/DSurya11/mockmate"
+  - name: "Job Finder"
+    tech: "Python, FastAPI, SQLite, React, Playwright, OpenAI-compatible LLM via OmniRoute"
+    description: "Aggregates 250+ company job boards; 'Ask' agent answers questions with read-only tools, code-checked answers and a trace"
+    url: "https://github.com/DSurya11/job-finder"
   - name: "Crypto Momentum Intelligence"
     tech: "FastAPI + React + PostgreSQL + XGBoost"
     description: "Real-time ETL pipeline processing 1000+ swap events/hr"
     url: ""
 
 # Path to your resume PDF (relative to this file, or absolute)
-resume_path: "Dantuluri Surya Narayana Raju 23BCS071.pdf"
+resume_path: "../resume/surya-resume.pdf"
 
 # -----------------------------------------------------------------------------
 # Job preferences — used for filtering and the Claude AI prompt
 # -----------------------------------------------------------------------------
 job_preferences:
-  type: "internship"               # internship | full-time
+  type: "full-time"                # internship | full-time
   paid_only: true
   # Pay floors. Full-time roles are judged on annual pay, internships on the stipend.
   min_lpa: 12                     # below this a full-time job is marked low pay
@@ -80,20 +115,17 @@ job_preferences:
   # Internships use the same floor annualised (9 LPA = 75,000 a month). To accept
   # lower-paid internships, uncomment and set a monthly figure:
   # min_stipend_per_month: 40000
-  levels: [Intern, Entry]        # levels to rank highest
-  preferred_locations:
-    - "Remote"
-    - "Hyderabad"
+  levels: [Entry]                # levels to rank highest (internships get partial credit)
+  preferred_locations:            # anywhere in India
     - "India"
   roles:
-    - "Python Backend Developer Intern"
-    - "FastAPI Developer Intern"
-    - "Backend Engineer Intern"
-    - "Software Engineer Intern (Python)"
-    - "AI/ML Engineer Intern"
-    - "Full Stack Developer Intern"
-    - "MERN Stack Intern"
-  # Jobs containing ANY of these words will be dropped before export
+    - "DevOps Engineer"
+    - "Site Reliability Engineer"
+    - "Platform Engineer"
+    - "Cloud Engineer"
+    - "Backend Engineer (Python)"
+    - "Software Engineer"
+  # A title with any of these words loses 20 fit points. Nothing is dropped or hidden.
   exclude_keywords:
     - "unpaid"
     - "no stipend"

@@ -130,7 +130,20 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
           <motion.dl variants={item} className="border-t border-rule">
           <Fact name="Fit">
             <span className="num text-[17px] font-medium">{Math.round(job.score)}</span><span className="text-faint"> / 100</span>
-            {job.score_reasons.length > 0 && <span className="mt-1 block text-[12.5px] leading-snug text-soft">{job.score_reasons.join(" · ")}</span>}
+            {/* One line per part of the score, its points on the right: the lines add up to the fit. */}
+            {job.score_reasons.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5 text-[12.5px] leading-snug">
+                {job.score_reasons.map((reason, i) => {
+                  const part = reason.match(/^(.*) ([+−])(\d+(?:\.\d+)?)$/);
+                  return (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span className="text-soft">{part ? part[1] : reason}</span>
+                      {part && <span className={`num shrink-0 ${part[2] === "+" ? "text-ink" : "text-bad"}`}>{part[2]}{part[3]}</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </Fact>
           <Fact name="Pay">
             <span className={`num text-[17px] font-medium ${TONE[pay.tone]}`}>{pay.text === "—" ? "Not stated" : pay.text}</span>
