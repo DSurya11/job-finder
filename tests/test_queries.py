@@ -49,6 +49,14 @@ def test_every_description_word_must_appear(tmp_path, monkeypatch):
     assert _ids(conn, desc="   ") == {"k8s", "uber", "python", "blank"}   # only spaces: no filter
 
 
+def test_any_of_several_description_words(tmp_path, monkeypatch):
+    conn = _conn(tmp_path, monkeypatch)
+    assert _ids(conn, desc_any=["kubernetes", "uber"]) == {"k8s", "uber"}
+    assert _ids(conn, desc_any=["kafka streaming"]) == {"python"}       # a phrase, matched as one
+    assert _ids(conn, desc="kafka", desc_any=["kubernetes", "uber"]) == {"k8s"}
+    assert _ids(conn, desc_any=[" ", ""]) == {"k8s", "uber", "python", "blank"}
+
+
 def test_description_filter_combines_with_the_others(tmp_path, monkeypatch):
     conn = _conn(tmp_path, monkeypatch)
     # "streaming" is only in a description: the search box (q) never looks there, desc does.

@@ -8,6 +8,7 @@ model can do with these tools is pick the wrong jobs.
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 
 from . import db, enrich, queries, score
@@ -48,13 +49,28 @@ def _range(low: float, high: float | None) -> str:
     return f"{low:g}" if not high or high == low else f"{low:g}-{high:g}"
 
 
+# What each estimate source means, in words: the model misread a bare "market" as the
+# company's own pay and told the user so.
+PAY_SOURCES = {
+    "ambitionbox": "estimate from salaries reported at this company (AmbitionBox)",
+    "band": "rough guess from the company's pay tier",
+    "market": "India-wide average for this role across all companies, NOT this company's pay",
+    "claude": "AI estimate",
+}
+
+
 def _pay(job: dict) -> str:
     if job.get("salary_min_lpa"):
-        return f"{_range(job['salary_min_lpa'], job.get('salary_max_lpa'))} LPA, stated"
+        return f"{_range(job['salary_min_lpa'], job.get('salary_max_lpa'))} LPA, stated in the posting"
     if job.get("est_min_lpa"):
-        return (f"{_range(job['est_min_lpa'], job.get('est_max_lpa'))} LPA, estimated "
-                f"({job.get('est_source') or 'unknown source'})")
+        source = PAY_SOURCES.get(job.get("est_source") or "", "estimate, source unknown")
+        return f"{_range(job['est_min_lpa'], job.get('est_max_lpa'))} LPA, {source}"
     return "not stated"
+
+
+def _fit(score: float | None) -> int:
+    """Rounded like the table (JavaScript's Math.round), so 48.5 is 49 in both places."""
+    return math.floor((score or 0) + 0.5)
 
 
 def _place(job: dict) -> str:
@@ -64,7 +80,8 @@ def _place(job: dict) -> str:
 _OFF = {
     "roles": [], "levels": [], "employment_types": [], "cities": [], "remote_only": False,
     "min_pay_lpa": None, "max_experience_years": None, "posted_within_days": None,
-    "statuses": [], "title_words": None, "description_words": None, "hide_low_pay": False,
+    "statuses": [], "title_words": None, "description_words": None, "description_any": [],
+    "hide_low_pay": False,
 }
 
 
@@ -77,6 +94,7 @@ def _where(f: dict) -> tuple[str, list]:
         salary_min=f["min_pay_lpa"], exp_max=f["max_experience_years"], has_salary=False,
         new_days=None, pay_filter=None, hide_bad=f["hide_low_pay"], min_score=None,
         has_description=False, posted_days=f["posted_within_days"], desc=f["description_words"],
+        desc_any=f["description_any"],
     )
 
 
@@ -88,7 +106,8 @@ def search_jobs(
     remote_only: bool = False, min_pay_lpa: float | None = None,
     max_experience_years: float | None = None, posted_within_days: int | None = None,
     statuses: list[str] | None = None, title_words: str | None = None,
-    description_words: str | None = None, hide_low_pay: bool = True,
+    description_words: str | None = None, description_any: list[str] | None = None,
+    hide_low_pay: bool = True,
     sort: str = "best_fit", limit: int = 10,
 ) -> str:
     roles = _check("roles", roles, _choices(conn, "role"))
@@ -112,7 +131,7 @@ def search_jobs(
         "cities": canonical, "remote_only": remote_only, "min_pay_lpa": min_pay_lpa,
         "max_experience_years": max_experience_years, "posted_within_days": posted_within_days,
         "statuses": statuses, "title_words": title_words, "description_words": description_words,
-        "hide_low_pay": hide_low_pay,
+        "description_any": description_any or [], "hide_low_pay": hide_low_pay,
     }
     where, args = _where(filters)
     limit = max(1, min(int(limit), MAX_ROWS))
@@ -127,7 +146,7 @@ def search_jobs(
             "type": j["employment_type"], "pay": _pay(j),
             "posted": j.get("posted_at") or (j.get("first_seen") or "")[:10],
             "status": j.get("status") or "", "openings": j.get("openings", 1),
-            "fit_score": round(j["score"] or 0),
+            "fit_score": _fit(j["score"]),
         } for j in jobs],
     }
     if total > len(jobs):
@@ -169,7 +188,7 @@ def get_job_details(conn: sqlite3.Connection, *, job_id: str) -> str:
         "pay": _pay(job), "pay_text_in_posting": job.get("salary_text") or "",
         "pay_estimate_note": job.get("est_note") or job.get("brain_note") or "",
         "posted": job.get("posted_at") or (job.get("first_seen") or "")[:10],
-        "status": job.get("status") or "", "fit_score": round(job["score"] or 0),
+        "status": job.get("status") or "", "fit_score": _fit(job["score"]),
         "fit_reasons": job["score_reasons"], "apply_url": job.get("apply_url") or "",
         "active": bool(job.get("is_active")),
         "description": description,
@@ -215,7 +234,8 @@ def schemas(conn: sqlite3.Connection) -> list[dict]:
                 "type": "object",
                 "properties": {
                     "roles": {"type": "array", "items": {"type": "string", "enum": _choices(conn, "role")}},
-                    "levels": {"type": "array", "items": {"type": "string", "enum": _choices(conn, "level")}},
+                    "levels": {"type": "array", "items": {"type": "string", "enum": _choices(conn, "level")},
+                               "description": "'Fresher' or 'new grad' means Entry."},
                     "employment_types": {"type": "array", "items": {
                         "type": "string", "enum": _choices(conn, "employment_type")}},
                     "cities": {"type": "array", "items": {"type": "string"},
@@ -230,7 +250,10 @@ def schemas(conn: sqlite3.Connection) -> list[dict]:
                     "title_words": {"type": "string",
                                     "description": "Words in the title, company or place (not the description)."},
                     "description_words": {"type": "string",
-                                          "description": "Words that must all appear in the description, e.g. 'kubernetes'."},
+                                          "description": "Words that must ALL appear in the description, e.g. 'kubernetes terraform'."},
+                    "description_any": {"type": "array", "items": {"type": "string"},
+                                        "description": "At least ONE of these must appear in the description: "
+                                                       "'FastAPI or Django' is ['fastapi', 'django']. A phrase stays one item."},
                     "hide_low_pay": {"type": "boolean",
                                      "description": "Hide low-pay, unpaid and fake-looking jobs. Default true."},
                     "sort": {"type": "string", "enum": list(SORTS)},

@@ -58,6 +58,14 @@ def test_an_empty_search_counts_what_each_filter_costs(conn):
     assert "if_you_drop" not in one_filter                  # nothing to compare with one filter
 
 
+def test_fit_rounds_like_the_table_and_pay_says_what_kind_it_is(conn):
+    db.upsert_jobs(conn, [_job("half", score=48.5, est_min_lpa=26.1, est_max_lpa=38.7,
+                               est_source="market")], "2026-10-24T00:00:00Z")
+    job = json.loads(tools.get_job_details(conn, job_id="half"))
+    assert job["fit_score"] == 49                  # Python's round(48.5) is 48; the table shows 49
+    assert "NOT this company's pay" in job["pay"]
+
+
 def test_schema_offers_only_values_in_the_data(conn):
     search = tools.schemas(conn)[0]["function"]["parameters"]["properties"]
     assert search["roles"]["items"]["enum"] == ["Backend", "DevOps / SRE"]

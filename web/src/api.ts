@@ -134,3 +134,23 @@ export async function savePayFloors(floors: PayFloors): Promise<PayFloors & { re
   if (!res.ok) throw new Error(body.detail ?? `${res.status} ${res.statusText}`);
   return body;
 }
+
+export type AskStep =
+  | { kind: "model"; step: number; model: string; tokens_in: number | null; tokens_out: number | null; seconds: number; finish_reason: string; text: string }
+  | { kind: "tool"; step: number; tool: string; arguments: string; failed: boolean; result: string }
+  | { kind: "answer"; step: number; job_ids: string[] }
+  | { kind: "error"; step: number; error: string };
+export type AskResult = {
+  answer: string; stopped: "answered" | "step_limit" | "token_budget" | "error";
+  steps: AskStep[]; tokens_in: number; tokens_out: number; seconds: number; jobs: Job[];
+};
+
+/** Asks the agent; a few seconds. The jobs are database rows, in the agent's order. */
+export async function askJobs(question: string): Promise<AskResult> {
+  const res = await fetch("/api/ask", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `${res.status} ${res.statusText}`);
+  return body;
+}

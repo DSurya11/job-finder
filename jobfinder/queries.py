@@ -59,7 +59,7 @@ def multi(value: str | None) -> list[str]:
 def build_where(
     q, role, level, etype, city, company, source, status, remote, tech, salary_min,
     exp_max, has_salary, new_days, pay_filter, hide_bad, min_score, has_description,
-    posted_days=None, desc=None,
+    posted_days=None, desc=None, desc_any=None,
 ) -> tuple[str, list]:
     clauses, args = ["j.is_active = 1"], []
 
@@ -130,6 +130,13 @@ def build_where(
     for term in (desc or "").split():
         clauses.append("(j.description LIKE ? AND starts_word(j.description, ?))")
         args.extend([f"%{term}%", term])
+    # At least one of these: "FastAPI or Django". Each may be a phrase ("spring boot").
+    any_terms = [t.strip() for t in desc_any or [] if t.strip()]
+    if any_terms:
+        clauses.append("(" + " OR ".join(
+            "(j.description LIKE ? AND starts_word(j.description, ?))" for _ in any_terms) + ")")
+        for term in any_terms:
+            args.extend([f"%{term}%", term])
     return " AND ".join(clauses), args
 
 
@@ -156,3 +163,15 @@ def find_jobs(
         [*args, size, (page - 1) * size],
     ).fetchall()
     return total, rows
+
+
+def jobs_by_id(conn: sqlite3.Connection, ids: list[str]) -> list[sqlite3.Row]:
+    """Rows shaped like find_jobs' rows for the given ids, in the order given (missing ids skipped)."""
+    if not ids:
+        return []
+    rows = conn.execute(
+        f"SELECT {LIST_COLUMNS}, 1 AS openings FROM jobs j LEFT JOIN user_state u ON u.job_id = j.id "
+        f"WHERE j.id IN ({','.join('?' * len(ids))})", ids,
+    ).fetchall()
+    by_id = {r["id"]: r for r in rows}
+    return [by_id[i] for i in ids if i in by_id]

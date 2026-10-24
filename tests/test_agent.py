@@ -124,3 +124,9 @@ def test_the_token_budget_stops_the_loop(conn):
     result = agent.ask("q", conn=conn, client=fake)
     assert result.stopped == "token_budget"
     assert len(fake.requests) == 1
+
+
+def test_markdown_markers_are_removed_from_the_answer(conn):
+    fake = FakeClient(reply(SEARCH), reply(("give_answer", {
+        "answer": "## Best\n**Acme** fits __well__.", "job_ids": ["k1"]})))
+    assert agent.ask("q", conn=conn, client=fake).answer == "Best\nAcme fits well."

@@ -11,9 +11,9 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from . import db, pipeline, queries, score
+from . import agent, db, pipeline, queries, score
 from .pay import floors as pay_floors
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -317,6 +317,31 @@ async def refresh():
 @app.get("/api/refresh")
 def refresh_status():
     return pipeline.PROGRESS
+
+
+class AskIn(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+@app.post("/api/ask")
+def ask_jobs(body: AskIn):
+    """Answer a question with the agent; its jobs come back shaped like /api/jobs rows.
+
+    The model only chooses which ids to show. Everything shown about a job (pay, place,
+    status) is read here from the database.
+    """
+    try:
+        result = agent.ask(body.question.strip())
+    except RuntimeError as error:                   # no OmniRoute key configured
+        raise HTTPException(503, str(error))
+    conn = db.connect()
+    try:
+        jobs = [db.job_to_dict(r) for r in queries.jobs_by_id(conn, result.job_ids)]
+    finally:
+        conn.close()
+    return {"answer": result.answer, "stopped": result.stopped, "steps": result.steps,
+            "tokens_in": result.tokens_in, "tokens_out": result.tokens_out,
+            "seconds": result.seconds, "jobs": jobs}
 
 
 class PromptIn(BaseModel):
