@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import db, pipeline, score
+from . import db, pipeline, queries, score
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 STATUSES = {"saved", "applied", "interview", "offer", "rejected", "hidden"}
@@ -30,121 +30,6 @@ async def cache_assets(request, call_next):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
-LIST_COLUMNS = (
-    "j.id, j.company, j.title, j.location, j.cities, j.is_remote, j.scope, "
-    "j.employment_type, j.level, j.role, j.is_tech, j.exp_min, j.exp_max, "
-    "j.salary_min_lpa, j.salary_max_lpa, j.salary_text, j.apply_url, j.source, "
-    "j.posted_at, j.first_seen, j.score, j.pay_verdict, "
-    "j.est_min_lpa, j.est_max_lpa, j.est_source, j.est_note, j.est_url, j.brain_note, "
-    "u.status AS status"
-)
-
-# Sortable columns: SQL expression, and the direction a first click gives.
-# Rows with no value for the column always go last, whichever way it is sorted.
-PAY_LOW = "COALESCE(j.salary_min_lpa, j.est_min_lpa)"
-STATUS_RANK = ("CASE u.status WHEN 'offer' THEN 1 WHEN 'interview' THEN 2 WHEN 'applied' THEN 3 "
-               "WHEN 'saved' THEN 4 WHEN 'rejected' THEN 5 END")
-# The Location column shows the canonical city list when there is one, so sort by that.
-PLACE = ("NULLIF(CASE WHEN j.cities != '[]' THEN replace(replace(replace(j.cities, '[\"', ''), "
-         "'\"]', ''), '\", \"', ', ') ELSE j.location END, '')")
-SORTS = {
-    "score": ("j.score", "desc"),
-    "company": ("j.company COLLATE NOCASE", "asc"),
-    "title": ("j.title COLLATE NOCASE", "asc"),
-    "location": (PLACE + " COLLATE NOCASE", "asc"),
-    "pay": (PAY_LOW, "desc"),
-    "posted": ("NULLIF(j.posted_at, '')", "desc"),
-    "source": ("j.source", "asc"),
-    "status": (STATUS_RANK, "asc"),
-}
-SORT_ALIASES = {"newest": "posted", "salary": "pay"}
-
-
-def order_by(sort: str, direction: str | None) -> str:
-    key = SORT_ALIASES.get(sort, sort)
-    expr, default = SORTS.get(key, SORTS["score"])
-    way = direction if direction in ("asc", "desc") else default
-    # j.score then j.id break ties, so paging never repeats or skips a row.
-    return f"({expr}) IS NULL, {expr} {way.upper()}, j.score DESC, j.id"
-
-
-POSTED = "COALESCE(NULLIF(j.posted_at, ''), substr(j.first_seen, 1, 10))"
-NEW_SINCE = db.ago("'-1 day'")      # "new" means first seen in the last 24 hours
-
-
-def _multi(value: str | None) -> list[str]:
-    return [v for v in (value or "").split(",") if v]
-
-
-def _where(
-    q, role, level, etype, city, company, source, status, remote, tech, salary_min,
-    exp_max, has_salary, new_days, pay_filter, hide_bad, min_score, has_description,
-    posted_days=None,
-) -> tuple[str, list]:
-    clauses, args = ["j.is_active = 1"], []
-
-    def any_of(column: str, values: list[str]) -> None:
-        if values:
-            clauses.append(f"{column} IN ({','.join('?' * len(values))})")
-            args.extend(values)
-
-    any_of("j.role", _multi(role))
-    any_of("j.level", _multi(level))
-    any_of("j.employment_type", _multi(etype))
-    any_of("j.company", _multi(company))
-    any_of("j.source", _multi(source))
-    any_of("j.pay_verdict", _multi(pay_filter))
-    if hide_bad and not _multi(pay_filter):
-        clauses.append("j.pay_verdict NOT IN ('low', 'unpaid', 'suspicious')")
-    if min_score:
-        clauses.append("j.score >= ?")
-        args.append(min_score)
-    if has_description:
-        clauses.append("j.description != ''")
-
-    cities = _multi(city)
-    if cities:
-        clauses.append("(" + " OR ".join("j.cities LIKE ?" for _ in cities) + ")")
-        args.extend(f'%"{c}"%' for c in cities)
-    if remote:
-        clauses.append("j.is_remote = 1")
-    if tech:
-        clauses.append("j.is_tech = 1")
-    if has_salary:
-        clauses.append("j.salary_text != ''")
-    if salary_min is not None:
-        # Stated pay, or the estimate where the posting states none.
-        # The low end of the range must clear the bar: "at least 12" should not
-        # return a 6-14 LPA job just because its top end reaches 12.
-        clauses.append("COALESCE(j.salary_min_lpa, j.est_min_lpa) >= ?")
-        args.append(salary_min)
-    if exp_max is not None:
-        # Jobs that do not state experience are kept: dropping them would hide
-        # most postings, and the level filter is the better tool for those.
-        clauses.append("(j.exp_min IS NULL OR j.exp_min <= ?)")
-        args.append(exp_max)
-    if posted_days:
-        # The posting's own date; sources that give none fall back to when we first saw it.
-        clauses.append(f"{POSTED} >= date('now', ?)")
-        args.append(f"-{int(posted_days)} days")
-    if new_days:
-        clauses.append(f"j.first_seen >= {db.ago()}")
-        args.append(f"-{int(new_days)} days")
-
-    statuses = _multi(status)
-    if statuses:
-        any_of("u.status", statuses)
-    else:
-        clauses.append("(u.status IS NULL OR u.status != 'hidden')")
-
-    # Search matches the title, company and place only. Matching descriptions too
-    # made a search for "amazon" return every posting that mentions AWS.
-    # Terms match from the start of a word, so "uber" does not match "Kubernetes".
-    for term in (q or "").split():
-        clauses.append("(starts_word(j.company, ?) OR starts_word(j.title, ?) OR starts_word(j.location, ?))")
-        args.extend([term] * 3)
-    return " AND ".join(clauses), args
-
 
 @app.get("/api/jobs")
 def list_jobs(
@@ -158,28 +43,12 @@ def list_jobs(
     posted_days: int | None = None, sort: str = "score", dir: str | None = None,
     page: int = Query(1, ge=1), size: int = Query(30, ge=1, le=200),
 ):
-    where, args = _where(q, role, level, type, city, company, source, status, remote, tech,
-                         salary_min, exp_max, has_salary, new_days, pay, hide_bad, min_score,
-                         has_description, posted_days)
-    base = f"FROM jobs j LEFT JOIN user_state u ON u.job_id = j.id WHERE {where}"
+    where, args = queries.build_where(
+        q, role, level, type, city, company, source, status, remote, tech, salary_min,
+        exp_max, has_salary, new_days, pay, hide_bad, min_score, has_description, posted_days)
     conn = db.connect()
     try:
-        # One row per company + title + level: the same role posted for several
-        # cities or requisitions is shown once, with a count. The representative
-        # is a tracked posting if there is one, otherwise the best-scoring.
-        group = "GROUP BY j.grp"
-        total = conn.execute(f"SELECT COUNT(*) FROM (SELECT 1 {base} {group})", args).fetchone()[0]
-        order = order_by(sort, dir)
-        terms = (q or "").split()        # a search of only spaces has no terms
-        if terms and sort == "score" and dir != "asc":
-            order = "starts_word(j.company, ?) DESC, " + order      # company matches first
-            args = [*args, terms[0]]
-        rows = conn.execute(
-            f"SELECT {LIST_COLUMNS}, COUNT(*) AS openings, "
-            "MAX((u.status IS NOT NULL AND u.status != 'hidden') * 1000 + j.score) AS pick "
-            f"{base} {group} ORDER BY {order} LIMIT ? OFFSET ?",
-            [*args, size, (page - 1) * size],
-        ).fetchall()
+        total, rows = queries.find_jobs(conn, where, args, q, sort, dir, page, size)
         return {"total": total, "page": page, "size": size,
                 "jobs": [db.job_to_dict(r) for r in rows]}
     finally:
@@ -276,23 +145,24 @@ def facets(
     """
     # Fetch the rows that pass every non-menu filter once, then count each menu in
     # Python with its own selection left out. One query instead of one per menu.
-    where, args = _where(
+    where, args = queries.build_where(
         q=q, role=None, level=None, etype=None, city=None, company=None, source=None,
         status=status, remote=remote, tech=tech, salary_min=salary_min, exp_max=exp_max,
         has_salary=has_salary, new_days=None, pay_filter=None, hide_bad=False,
         min_score=min_score, has_description=has_description, posted_days=posted_days,
     )
     picked = {
-        "role": set(_multi(role)), "level": set(_multi(level)), "type": set(_multi(type)),
-        "company": set(_multi(company)), "source": set(_multi(source)),
-        "pay": set(_multi(pay)), "city": set(_multi(city)),
+        "role": set(queries.multi(role)), "level": set(queries.multi(level)),
+        "type": set(queries.multi(type)), "company": set(queries.multi(company)),
+        "source": set(queries.multi(source)), "pay": set(queries.multi(pay)),
+        "city": set(queries.multi(city)),
     }
     hidden_pay = {"low", "unpaid", "suspicious"} if hide_bad else set()
     conn = db.connect()
     try:
         rows = conn.execute(
             "SELECT j.grp, j.role, j.level, j.employment_type AS type, j.company, j.source, "
-            f"j.pay_verdict AS pay, j.cities, j.first_seen >= {NEW_SINCE} AS is_new, "
+            f"j.pay_verdict AS pay, j.cities, j.first_seen >= {queries.NEW_SINCE} AS is_new, "
             + (f"j.first_seen >= {db.ago()} AS in_window " if new_days else "1 AS in_window ")
             + f"FROM jobs j LEFT JOIN user_state u ON u.job_id = j.id WHERE {where}",
             ([f"-{int(new_days)} days"] if new_days else []) + args,
@@ -340,7 +210,7 @@ def facets(
             "SELECT COUNT(*) AS jobs, COUNT(DISTINCT company) AS companies, "
             "SUM(is_tech) AS tech, SUM(salary_text != '') AS with_salary, "
             "SUM(description != '') AS with_description, "
-            f"SUM(first_seen >= {NEW_SINCE}) AS new_today "
+            f"SUM(first_seen >= {queries.NEW_SINCE}) AS new_today "
             "FROM jobs WHERE is_active = 1"
         ).fetchone()
         return {
