@@ -26,6 +26,8 @@ ADAPTERS = {**ATS_ADAPTERS, **FEEDS}
 # Postings from these belong to many companies and are never the only copy we want.
 AGGREGATORS = {"linkedin", "internshala"}
 AGGREGATOR_TTL_DAYS = 14
+# Days a closed company-board job waits before it is deleted (unless you tracked it).
+CLOSED_GRACE_DAYS = 7
 
 logger = logging.getLogger("jobfinder")
 
@@ -209,9 +211,9 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
                 # A search feed never returns everything, so absence from one run
                 # proves nothing; retire by age instead.
                 closed_total += conn.execute(
-                    "UPDATE jobs SET is_active=0 WHERE source=? AND is_active=1 "
+                    "UPDATE jobs SET is_active=0, closed_at=? WHERE source=? AND is_active=1 "
                     f"AND last_seen < {db.ago()}",
-                    (company["ats"], f"-{AGGREGATOR_TTL_DAYS} days"),
+                    (started, company["ats"], f"-{AGGREGATOR_TTL_DAYS} days"),
                 ).rowcount
             elif status == "ok":
                 closed_total += db.close_missing(conn, company["name"], started)
@@ -239,6 +241,8 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
     # Re-apply salary-site pay already looked up; new jobs at known companies get it free.
     from .portal import apply_cached
     apply_cached(conn, profile)
+    purged = db.purge_closed(conn, AGGREGATORS, CLOSED_GRACE_DAYS)
+    conn.commit()
 
     conn.execute(
         "UPDATE runs SET finished=?, raw_total=?, india_total=?, new_jobs=?, closed_jobs=? WHERE id=?",
@@ -249,7 +253,7 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
     summary = {
         "run_id": run_id, "companies": len(companies), "raw_total": raw_total,
         "india_total": india_total, "new_jobs": new_total, "closed_jobs": closed_total,
-        "details_fetched": details,
+        "purged_jobs": purged, "details_fetched": details,
         "problems": [r for r in report if r["status"] != "ok"], "report": report,
     }
     PROGRESS.update(running=False, current="", last={k: v for k, v in summary.items() if k != "report"})
@@ -261,6 +265,7 @@ def print_summary(summary: dict) -> None:
     print(f"Raw postings      : {summary['raw_total']}")
     print(f"India-eligible    : {summary['india_total']}")
     print(f"New / closed      : {summary['new_jobs']} / {summary['closed_jobs']}")
+    print(f"Deleted (closed, untracked): {summary['purged_jobs']}")
     print(f"Details fetched   : {summary['details_fetched']}")
     problems = summary["problems"]
     print(f"Companies needing attention: {len(problems)}")

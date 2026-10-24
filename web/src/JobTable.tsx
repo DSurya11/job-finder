@@ -65,6 +65,7 @@ export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen 
   const pay = payOf(job);
   const estimated = job.salary_max_lpa == null && job.est_max_lpa != null;
   const status = job.status ? STATUS[job.status] : null;
+  const closed = job.is_active === false;
   const enters = index < STAGGER;
   return (
     <motion.div
@@ -78,7 +79,7 @@ export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen 
       {active && <motion.span layoutId="cursor" className="absolute inset-y-0 left-0 w-[2px] bg-mark" transition={SPRING} />}
       <span className={`num text-[12.5px] ${job.score >= 70 ? "font-medium text-ink" : "text-faint"}`}>{Math.round(job.score)}</span>
       <span className="truncate text-[12.5px] text-soft">{job.company}</span>
-      <span className="truncate font-medium">
+      <span className={`truncate font-medium ${closed ? "text-soft" : ""}`}>
         {picked && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={SPRING} className="mr-1.5 inline-block text-mark" title="Selected for the Claude prompt">+</motion.span>}
         {job.title}
         {(job.openings ?? 1) > 1 && <span className="num ml-1.5 text-[11px] font-normal text-faint">×{job.openings}</span>}
@@ -95,6 +96,7 @@ export const JobRow = memo(function JobRow({ job, active, picked, index, onOpen 
             <motion.i initial={{ scale: 2.2 }} animate={{ scale: 1 }} transition={SPRING} className={`size-1.5 rounded-full ${status.dot}`} />{status.label}
           </motion.span>
         ) : <span className="text-faint">New</span>}
+        {closed && <span className="text-[11px] text-faint" title={`The posting closed on ${(job.closed_at ?? "").slice(0, 10)}`}>· closed</span>}
       </span>
     </motion.div>
   );

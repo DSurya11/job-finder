@@ -243,8 +243,9 @@ def facets(
 
         tracker = {
             r["status"]: r["n"] for r in conn.execute(
+                # Closed postings still count: the tabs keep them (marked closed).
                 "SELECT u.status, COUNT(*) AS n FROM user_state u JOIN jobs j ON j.id = u.job_id "
-                "WHERE j.is_active = 1 AND u.status != '' GROUP BY 1")
+                "WHERE u.status != '' GROUP BY 1")
         }
         totals = conn.execute(
             "SELECT COUNT(*) AS jobs, COUNT(DISTINCT company) AS companies, "

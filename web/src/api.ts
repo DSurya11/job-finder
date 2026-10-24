@@ -28,6 +28,9 @@ export type Job = {
   est_note: string | null;
   est_url: string | null;
   openings?: number;
+  /** false once the posting is gone; only your status tabs still show it. */
+  is_active?: boolean;
+  closed_at?: string | null;
   others?: { id: string; location: string; apply_url: string }[];
   snippet?: string;
   description?: string;

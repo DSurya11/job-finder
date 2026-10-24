@@ -147,6 +147,7 @@ def search_jobs(
             "posted": j.get("posted_at") or (j.get("first_seen") or "")[:10],
             "status": j.get("status") or "", "openings": j.get("openings", 1),
             "fit_score": _fit(j["score"]),
+            **({} if j.get("is_active", True) else {"closed_on": (j.get("closed_at") or "")[:10]}),
         } for j in jobs],
     }
     if total > len(jobs):

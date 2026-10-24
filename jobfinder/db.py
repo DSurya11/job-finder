@@ -81,6 +81,8 @@ EXTRA_COLUMNS = {
     "brain_flag": "TEXT", "brain_note": "TEXT", "brain_done": "INTEGER DEFAULT 0",
     # where the estimate came from: 'ambitionbox', 'claude' or 'band' (rough tier table)
     "est_source": "TEXT", "est_note": "TEXT", "est_url": "TEXT",
+    # when a refresh first found the posting gone; cleared if it comes back
+    "closed_at": "TEXT",
 }
 
 JOB_COLUMNS = [
@@ -130,6 +132,8 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     for column, kind in EXTRA_COLUMNS.items():
         if column not in have:
             conn.execute(f"ALTER TABLE jobs ADD COLUMN {column} {kind}")
+    # Jobs closed before closed_at existed: the last time they were seen is the best guess.
+    conn.execute("UPDATE jobs SET closed_at = last_seen WHERE is_active = 0 AND closed_at IS NULL")
     # One table row per company, title and level. Stored as an indexed generated
     # column because the list and every filter count group by it.
     if "grp" not in {r["name"] for r in conn.execute("PRAGMA table_xinfo(jobs)")}:
@@ -166,7 +170,7 @@ def upsert_jobs(conn: sqlite3.Connection, jobs: list[dict], seen_at: str) -> int
             ]
             conn.execute(
                 f"UPDATE jobs SET {', '.join(f'{c}=:{c}' for c in cols)}, "
-                "last_seen=:seen, is_active=1 WHERE id=:id",
+                "last_seen=:seen, is_active=1, closed_at=NULL WHERE id=:id",
                 {**{c: row.get(c) for c in JOB_COLUMNS}, "seen": seen_at},
             )
         else:
@@ -196,8 +200,29 @@ _ESTIMATE_OWNED = {"est_min_lpa", "est_max_lpa", "est_source", "pay_verdict", "s
 
 def close_missing(conn: sqlite3.Connection, company: str, seen_at: str) -> int:
     cur = conn.execute(
-        "UPDATE jobs SET is_active=0 WHERE company=? AND is_active=1 AND last_seen<?",
-        (company, seen_at),
+        "UPDATE jobs SET is_active=0, closed_at=? WHERE company=? AND is_active=1 AND last_seen<?",
+        (seen_at, company, seen_at),
+    )
+    return cur.rowcount
+
+
+# A job someone tracked: a status other than dismissed, or a note.
+TRACKED = "SELECT job_id FROM user_state WHERE status NOT IN ('', 'hidden') OR notes != ''"
+
+
+def purge_closed(conn: sqlite3.Connection, aggregators: set[str], grace_days: int) -> int:
+    """Delete closed jobs nobody tracked, once they have been closed for the grace period.
+
+    A board can fail for a run and make its jobs look closed, so a company board's job
+    waits grace_days, and one that comes back in that time simply reopens. An aggregator
+    job was already unseen for two weeks before it was closed, so it goes at once.
+    A dismissed job's user_state row stays, so a repost of it is still dismissed.
+    """
+    marks = ",".join("?" * len(aggregators))
+    cur = conn.execute(
+        f"DELETE FROM jobs WHERE is_active = 0 AND closed_at IS NOT NULL "
+        f"AND (source IN ({marks}) OR closed_at < {ago()}) AND id NOT IN ({TRACKED})",
+        (*sorted(aggregators), f"-{int(grace_days)} days"),
     )
     return cur.rowcount
 

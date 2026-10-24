@@ -16,7 +16,7 @@ LIST_COLUMNS = (
     "j.salary_min_lpa, j.salary_max_lpa, j.salary_text, j.apply_url, j.source, "
     "j.posted_at, j.first_seen, j.score, j.pay_verdict, "
     "j.est_min_lpa, j.est_max_lpa, j.est_source, j.est_note, j.est_url, "
-    "u.status AS status"
+    "j.is_active, j.closed_at, u.status AS status"
 )
 
 # Sortable columns: SQL expression, and the direction a first click gives.
@@ -61,7 +61,11 @@ def build_where(
     exp_max, has_salary, new_days, pay_filter, hide_bad, min_score, has_description,
     posted_days=None, desc=None, desc_any=None,
 ) -> tuple[str, list]:
-    clauses, args = ["j.is_active = 1"], []
+    statuses = multi(status)
+    # A status tab is the tracker: a job you saved or applied to stays there after its
+    # posting closes (marked closed). Everything else lists open postings only.
+    tracking = bool(statuses) and "hidden" not in statuses
+    clauses, args = ([] if tracking else ["j.is_active = 1"]), []
 
     def any_of(column: str, values: list[str]) -> None:
         if values:
@@ -111,7 +115,6 @@ def build_where(
         clauses.append(f"j.first_seen >= {db.ago()}")
         args.append(f"-{int(new_days)} days")
 
-    statuses = multi(status)
     if statuses:
         any_of("u.status", statuses)
     else:

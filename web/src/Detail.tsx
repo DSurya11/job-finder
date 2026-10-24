@@ -85,6 +85,11 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
           <div className="min-w-0">
             <div className="text-[14px] font-medium text-soft">{job.company}</div>
             <h2 className="mt-1 text-[26px] font-semibold leading-tight tracking-[-0.01em]">{job.title}</h2>
+            {job.is_active === false && (
+              <p className="mt-1.5 text-[12.5px] text-warn">
+                This posting closed{job.closed_at ? ` on ${job.closed_at.slice(0, 10)}` : ""}. It stays here because you tracked it; the link may no longer work.
+              </p>
+            )}
           </div>
           <button onClick={onClose} className="shrink-0 text-[12px] text-soft hover:text-ink" title="Close">Close <kbd>esc</kbd></button>
         </div>
