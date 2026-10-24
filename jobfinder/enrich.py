@@ -300,9 +300,16 @@ _ROLE_RULES: list[tuple[str, bool, re.Pattern]] = [
                                       r"design verification|physical design|\bsoc design|silicon|"
                                       r"\bdft\b|analog|circuit|\bcad\b engineer|electrical engineer"),
         ("Security", True, r"security|appsec|infosec|penetration|soc analyst|threat|vulnerab|cryptograph"),
-        ("DevOps / SRE", True, r"devops|\bsre\b|site reliability|platform engineer|infrastructure|"
-                               r"cloud engineer|kubernetes|release engineer|build engineer|"
-                               r"systems? engineer|network engineer|production engineer"),
+        # Bare "infrastructure" and "system engineer" also name electrical, telecom, procurement
+        # and finance jobs, so they count only next to an engineering word.
+        ("DevOps / SRE", True, r"devops|\bsre\b|site reliability|platform engineer|"
+                               r"cloud (engineer|infrastructure|platform|ops)|kubernetes|terraform|"
+                               r"ci ?/ ?cd|release engineer|build engineer|production engineer|"
+                               r"infrastructure (engineer|automation|as code|reliability)|"
+                               r"\binfra engineer|linux (systems? )?engineer"),
+        ("Networking / IT", True, r"network engineer|network(ing)? (administrator|architect|engineering|"
+                                  r"specialist)|\bnoc\b|systems? administrator|\bsysadmin\b|"
+                                  r"it infrastructure|it systems? engineer|desktop support"),
         ("QA / SDET", True, r"\bqa\b|\bsdet\b|quality (assurance|engineer)|test (engineer|automation)|"
                             r"software engineer in test|automation engineer|tester"),
         ("Mobile", True, r"android|\bios\b|mobile|flutter|react native|kotlin|swift"),

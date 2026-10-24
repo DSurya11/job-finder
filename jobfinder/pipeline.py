@@ -289,14 +289,17 @@ def rescore(conn) -> int:
             conn.commit()
             PROGRESS["done"] = n
         job = db.job_to_dict(row)
+        # The role comes from the title by rules that improve over time; redo it too.
+        job["role"], is_tech = enrich.classify_role(job["title"], job.get("departments") or "")
+        job["is_tech"] = int(is_tech)
         pay.apply_band(job)
         job["pay_verdict"] = pay.judge(job, profile)
         value, reasons = score.score_job(job, profile)
         conn.execute(
-            "UPDATE jobs SET score=?, score_reasons=?, pay_verdict=?, est_min_lpa=?, "
-            "est_max_lpa=?, est_source=? WHERE id=?",
-            (value, json.dumps(reasons), job["pay_verdict"], job.get("est_min_lpa"),
-             job.get("est_max_lpa"), job.get("est_source"), job["id"]))
+            "UPDATE jobs SET role=?, is_tech=?, score=?, score_reasons=?, pay_verdict=?, "
+            "est_min_lpa=?, est_max_lpa=?, est_source=? WHERE id=?",
+            (job["role"], job["is_tech"], value, json.dumps(reasons), job["pay_verdict"],
+             job.get("est_min_lpa"), job.get("est_max_lpa"), job.get("est_source"), job["id"]))
     conn.commit()
     PROGRESS["done"] = len(rows)
     return len(rows)
