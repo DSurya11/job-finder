@@ -8,6 +8,8 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import enrich
+
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "jobs.db"
 
 SCHEMA = """
@@ -72,6 +74,16 @@ CREATE TABLE IF NOT EXISTS portal_pay (
     company TEXT, designation TEXT, data TEXT, fetched_at TEXT,
     PRIMARY KEY (company, designation)
 );
+
+-- Every Ask run: what was asked, each step, what came back. Read when debugging an answer,
+-- and real questions become eval cases.
+CREATE TABLE IF NOT EXISTS agent_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at TEXT, source TEXT,          -- app | cli | eval
+    question TEXT, answer TEXT, stopped TEXT, job_ids TEXT,
+    total_matching INTEGER, search TEXT, steps TEXT, models TEXT,
+    tokens_in INTEGER, tokens_out INTEGER, seconds REAL
+);
 """
 
 # Added after the first release; created on connect if an older database lacks them.
@@ -81,6 +93,8 @@ EXTRA_COLUMNS = {
     "brain_flag": "TEXT", "brain_note": "TEXT", "brain_done": "INTEGER DEFAULT 0",
     # where the estimate came from: 'ambitionbox', 'claude' or 'band' (rough tier table)
     "est_source": "TEXT", "est_note": "TEXT", "est_url": "TEXT",
+    # when a refresh first found the posting gone; cleared if it comes back
+    "closed_at": "TEXT",
 }
 
 JOB_COLUMNS = [
@@ -130,11 +144,20 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     for column, kind in EXTRA_COLUMNS.items():
         if column not in have:
             conn.execute(f"ALTER TABLE jobs ADD COLUMN {column} {kind}")
-    # One table row per company, title and level. Stored as an indexed generated
-    # column because the list and every filter count group by it.
-    if "grp" not in {r["name"] for r in conn.execute("PRAGMA table_xinfo(jobs)")}:
-        conn.execute("ALTER TABLE jobs ADD COLUMN grp TEXT GENERATED ALWAYS AS "
-                     "(company || '|' || lower(title) || '|' || level) VIRTUAL")
+    # Jobs closed before closed_at existed: the last time they were seen is the best guess.
+    conn.execute("UPDATE jobs SET closed_at = last_seen WHERE is_active = 0 AND closed_at IS NULL")
+    # One table row per group (enrich.group_key), indexed because the list and every
+    # filter count group by it. It was once a generated column of the exact company,
+    # title and level; SQLite cannot change one, so an old database is converted here.
+    columns = {r["name"]: r["hidden"] for r in conn.execute("PRAGMA table_xinfo(jobs)")}
+    if columns.get("grp") in (2, 3):                  # 2, 3: a generated column
+        conn.execute("DROP INDEX IF EXISTS idx_jobs_grp")
+        conn.execute("ALTER TABLE jobs DROP COLUMN grp")
+        columns.pop("grp")
+    if "grp" not in columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN grp TEXT")
+        refresh_groups(conn)
+        conn.commit()
     conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_grp ON jobs(is_active, grp)")
     _READY.add(str(path))
     return conn
@@ -166,7 +189,7 @@ def upsert_jobs(conn: sqlite3.Connection, jobs: list[dict], seen_at: str) -> int
             ]
             conn.execute(
                 f"UPDATE jobs SET {', '.join(f'{c}=:{c}' for c in cols)}, "
-                "last_seen=:seen, is_active=1 WHERE id=:id",
+                "last_seen=:seen, is_active=1, closed_at=NULL WHERE id=:id",
                 {**{c: row.get(c) for c in JOB_COLUMNS}, "seen": seen_at},
             )
         else:
@@ -176,8 +199,24 @@ def upsert_jobs(conn: sqlite3.Connection, jobs: list[dict], seen_at: str) -> int
                 f"VALUES ({', '.join(':' + c for c in JOB_COLUMNS)}, :seen, :seen, 1)",
                 {**{c: row.get(c) for c in JOB_COLUMNS}, "seen": seen_at},
             )
+    # From what is now stored: a listing refresh may have kept the detail page's level.
+    refresh_groups(conn, [job["id"] for job in jobs])
     conn.commit()
     return new
+
+
+def refresh_groups(conn: sqlite3.Connection, ids: list[str] | None = None) -> None:
+    """Recompute grp, the table's one-row-per-job key, for these jobs (all when None)."""
+    if ids is None:
+        rows = conn.execute("SELECT id, company, title, level FROM jobs").fetchall()
+    else:
+        rows = []
+        for start in range(0, len(ids), 500):          # stay under SQLite's variable limit
+            chunk = ids[start:start + 500]
+            rows += conn.execute(f"SELECT id, company, title, level FROM jobs WHERE id IN "
+                                 f"({','.join('?' * len(chunk))})", chunk).fetchall()
+    conn.executemany("UPDATE jobs SET grp = ? WHERE id = ?",
+                     [(enrich.group_key(r[1], r[2], r[3]), r[0]) for r in rows])
 
 
 # Fields the detail page fills in; a later listing-only pass leaves them alone.
@@ -196,8 +235,29 @@ _ESTIMATE_OWNED = {"est_min_lpa", "est_max_lpa", "est_source", "pay_verdict", "s
 
 def close_missing(conn: sqlite3.Connection, company: str, seen_at: str) -> int:
     cur = conn.execute(
-        "UPDATE jobs SET is_active=0 WHERE company=? AND is_active=1 AND last_seen<?",
-        (company, seen_at),
+        "UPDATE jobs SET is_active=0, closed_at=? WHERE company=? AND is_active=1 AND last_seen<?",
+        (seen_at, company, seen_at),
+    )
+    return cur.rowcount
+
+
+# A job someone tracked: a status other than dismissed, or a note.
+TRACKED = "SELECT job_id FROM user_state WHERE status NOT IN ('', 'hidden') OR notes != ''"
+
+
+def purge_closed(conn: sqlite3.Connection, aggregators: set[str], grace_days: int) -> int:
+    """Delete closed jobs nobody tracked, once they have been closed for the grace period.
+
+    A board can fail for a run and make its jobs look closed, so a company board's job
+    waits grace_days, and one that comes back in that time simply reopens. An aggregator
+    job was already unseen for two weeks before it was closed, so it goes at once.
+    A dismissed job's user_state row stays, so a repost of it is still dismissed.
+    """
+    marks = ",".join("?" * len(aggregators))
+    cur = conn.execute(
+        f"DELETE FROM jobs WHERE is_active = 0 AND closed_at IS NOT NULL "
+        f"AND (source IN ({marks}) OR closed_at < {ago()}) AND id NOT IN ({TRACKED})",
+        (*sorted(aggregators), f"-{int(grace_days)} days"),
     )
     return cur.rowcount
 

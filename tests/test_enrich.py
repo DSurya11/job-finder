@@ -127,3 +127,23 @@ def _job(**kw):
 ])
 def test_pay_verdict(job, verdict):
     assert pay.judge(job, _PROFILE) == verdict
+
+
+@pytest.mark.parametrize("title, role", [
+    # Titles the old rule called DevOps / SRE (October 2026 data).
+    ("Electrical System Engineer", "Software Engineering"),
+    ("Senior Power Systems Engineer", "Software Engineering"),
+    ("Procurement Category Manager - Energy & Water Infrastructure, Data Center Services", "Finance / Ops / HR"),
+    ("Tech Infrastructure Program Manager, AWS Data Center Planning & Delivery", "Product"),
+    ("Senior Systems Engineer (Pre Sales)", "Sales / Marketing"),
+    ("Network Development Engineer, Corporate Network Engineering - Core", "Networking / IT"),
+    ("ERP System Administrator I", "Networking / IT"),
+    # Real DevOps / SRE work stays, or now arrives.
+    ("Senior DevOps Engineer", "DevOps / SRE"),
+    ("Site Reliability Engineer - On-Prem (4 to 12 Years)", "DevOps / SRE"),
+    ("Infrastructure Engineer, TechOps CICD (Hybrid, IND)", "DevOps / SRE"),
+    ("Software Engineer II - Java, Spring, AWS, Terraform", "DevOps / SRE"),
+    ("Lead, Platform Engineering", "DevOps / SRE"),
+])
+def test_devops_means_devops(title, role):
+    assert enrich.classify_role(title)[0] == role

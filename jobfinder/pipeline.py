@@ -26,6 +26,8 @@ ADAPTERS = {**ATS_ADAPTERS, **FEEDS}
 # Postings from these belong to many companies and are never the only copy we want.
 AGGREGATORS = {"linkedin", "internshala"}
 AGGREGATOR_TTL_DAYS = 14
+# Days a closed company-board job waits before it is deleted (unless you tracked it).
+CLOSED_GRACE_DAYS = 7
 
 logger = logging.getLogger("jobfinder")
 
@@ -38,14 +40,6 @@ PROGRESS: dict = {"running": False, "done": 0, "total": 0, "current": "", "last"
 def load_companies(path: Path | str | None = None) -> list[dict]:
     data = yaml.safe_load(Path(path or COMPANIES_PATH).read_text(encoding="utf-8")) or {}
     return [c for c in data.get("companies", []) if c.get("enabled", True)]
-
-
-def match_key(company: str, title: str) -> str:
-    """Loose identity used to drop an aggregator copy of a job we already have."""
-    norm = lambda t: re.sub(r"[^a-z0-9]+", "", t.lower())
-    company = re.sub(r"\b(india|pvt|private|ltd|limited|inc|llc|technologies|technology|"
-                     r"labs|software|corporation|corp|group)\b\.?", "", company.lower())
-    return f"{norm(company)}|{norm(title)}"
 
 
 def job_id(company: str, raw: dict) -> str:
@@ -196,11 +190,11 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
                 if direct_keys is None:
                     marks = ",".join("?" * len(AGGREGATORS))
                     direct_keys = {
-                        match_key(r["company"], r["title"]) for r in conn.execute(
+                        enrich.match_key(r["company"], r["title"]) for r in conn.execute(
                             f"SELECT company, title FROM jobs WHERE is_active=1 "
                             f"AND source NOT IN ({marks})", tuple(AGGREGATORS))
                     }
-                jobs = [j for j in jobs if match_key(j["company"], j["title"]) not in direct_keys]
+                jobs = [j for j in jobs if enrich.match_key(j["company"], j["title"]) not in direct_keys]
             ok = not res["error"]
             status = health_status(ok, len(res["raw"]), len(jobs), previous.get(company["name"]))
             new_total += db.upsert_jobs(conn, jobs, started)
@@ -209,9 +203,9 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
                 # A search feed never returns everything, so absence from one run
                 # proves nothing; retire by age instead.
                 closed_total += conn.execute(
-                    "UPDATE jobs SET is_active=0 WHERE source=? AND is_active=1 "
+                    "UPDATE jobs SET is_active=0, closed_at=? WHERE source=? AND is_active=1 "
                     f"AND last_seen < {db.ago()}",
-                    (company["ats"], f"-{AGGREGATOR_TTL_DAYS} days"),
+                    (started, company["ats"], f"-{AGGREGATOR_TTL_DAYS} days"),
                 ).rowcount
             elif status == "ok":
                 closed_total += db.close_missing(conn, company["name"], started)
@@ -239,6 +233,8 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
     # Re-apply salary-site pay already looked up; new jobs at known companies get it free.
     from .portal import apply_cached
     apply_cached(conn, profile)
+    purged = db.purge_closed(conn, AGGREGATORS, CLOSED_GRACE_DAYS)
+    conn.commit()
 
     conn.execute(
         "UPDATE runs SET finished=?, raw_total=?, india_total=?, new_jobs=?, closed_jobs=? WHERE id=?",
@@ -249,7 +245,7 @@ async def _run(companies: list[dict] | None, with_details: bool) -> dict:
     summary = {
         "run_id": run_id, "companies": len(companies), "raw_total": raw_total,
         "india_total": india_total, "new_jobs": new_total, "closed_jobs": closed_total,
-        "details_fetched": details,
+        "purged_jobs": purged, "details_fetched": details,
         "problems": [r for r in report if r["status"] != "ok"], "report": report,
     }
     PROGRESS.update(running=False, current="", last={k: v for k, v in summary.items() if k != "report"})
@@ -261,6 +257,7 @@ def print_summary(summary: dict) -> None:
     print(f"Raw postings      : {summary['raw_total']}")
     print(f"India-eligible    : {summary['india_total']}")
     print(f"New / closed      : {summary['new_jobs']} / {summary['closed_jobs']}")
+    print(f"Deleted (closed, untracked): {summary['purged_jobs']}")
     print(f"Details fetched   : {summary['details_fetched']}")
     problems = summary["problems"]
     print(f"Companies needing attention: {len(problems)}")
@@ -268,3 +265,33 @@ def print_summary(summary: dict) -> None:
         note = p["error"] or (f"was {p['previous']}, now {p['india']}" if p["status"] == "dropped" else "0 postings")
         print(f"  [{p['status']:7}] {p['company']:28} {p['ats']:16} {note}")
     print(json.dumps({k: v for k, v in summary.items() if k not in ("report", "problems")}))
+
+
+def rescore(conn) -> int:
+    """Re-score every stored job and redo its pay verdict, e.g. after the profile changes.
+
+    Returns how many jobs were re-scored. Commits in batches, so the web app can still
+    save while this runs, and counts them in PROGRESS for the app to show.
+    """
+    profile = score.load_profile()
+    rows = conn.execute("SELECT * FROM jobs").fetchall()
+    PROGRESS.update(done=0, total=len(rows))
+    for n, row in enumerate(rows, 1):
+        if n % 500 == 0:
+            conn.commit()
+            PROGRESS["done"] = n
+        job = db.job_to_dict(row)
+        # The role comes from the title by rules that improve over time; redo it too.
+        job["role"], is_tech = enrich.classify_role(job["title"], job.get("departments") or "")
+        job["is_tech"] = int(is_tech)
+        pay.apply_band(job)
+        job["pay_verdict"] = pay.judge(job, profile)
+        value, reasons = score.score_job(job, profile)
+        conn.execute(
+            "UPDATE jobs SET role=?, is_tech=?, score=?, score_reasons=?, pay_verdict=?, "
+            "est_min_lpa=?, est_max_lpa=?, est_source=? WHERE id=?",
+            (job["role"], job["is_tech"], value, json.dumps(reasons), job["pay_verdict"],
+             job.get("est_min_lpa"), job.get("est_max_lpa"), job.get("est_source"), job["id"]))
+    conn.commit()
+    PROGRESS["done"] = len(rows)
+    return len(rows)

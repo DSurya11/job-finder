@@ -284,6 +284,29 @@ def parse_experience(text: str | None) -> tuple[float | None, float | None]:
     return None, None
 
 
+# ── Identity: when two postings are the same job ────────────────────────────
+
+_COMPANY_SUFFIX = re.compile(r"\b(india|pvt|private|ltd|limited|inc|llc|technologies|technology|"
+                             r"labs|software|corporation|corp|group)\b\.?", re.I)
+
+
+def _squash(text: str) -> str:
+    """Lowercase letters and digits only; "C++" and "C#" stay apart from "C"."""
+    text = (text or "").lower().replace("+", " plus ").replace("#", " sharp ")
+    return re.sub(r"[^a-z0-9]+", "", text)
+
+
+def match_key(company: str, title: str) -> str:
+    """Loose identity used to drop an aggregator copy of a job we already have."""
+    return f"{_squash(_COMPANY_SUFFIX.sub('', company or ''))}|{_squash(title)}"
+
+
+def group_key(company: str, title: str, level: str | None) -> str:
+    """The table shows one row per group: "Software Engineer II" and "Software Engineer-II"
+    at "NEC Software Solutions" and "NEC Software Solutions (India)" are one row."""
+    return f"{match_key(company, title)}|{level or ''}"
+
+
 # ── Role family, seniority, employment type ──────────────────────────────────
 
 _ROLE_RULES: list[tuple[str, bool, re.Pattern]] = [
@@ -300,9 +323,16 @@ _ROLE_RULES: list[tuple[str, bool, re.Pattern]] = [
                                       r"design verification|physical design|\bsoc design|silicon|"
                                       r"\bdft\b|analog|circuit|\bcad\b engineer|electrical engineer"),
         ("Security", True, r"security|appsec|infosec|penetration|soc analyst|threat|vulnerab|cryptograph"),
-        ("DevOps / SRE", True, r"devops|\bsre\b|site reliability|platform engineer|infrastructure|"
-                               r"cloud engineer|kubernetes|release engineer|build engineer|"
-                               r"systems? engineer|network engineer|production engineer"),
+        # Bare "infrastructure" and "system engineer" also name electrical, telecom, procurement
+        # and finance jobs, so they count only next to an engineering word.
+        ("DevOps / SRE", True, r"devops|\bsre\b|site reliability|platform engineer|"
+                               r"cloud (engineer|infrastructure|platform|ops)|kubernetes|terraform|"
+                               r"ci ?/ ?cd|release engineer|build engineer|production engineer|"
+                               r"infrastructure (engineer|automation|as code|reliability)|"
+                               r"\binfra engineer|linux (systems? )?engineer"),
+        ("Networking / IT", True, r"network engineer|network(ing)? (administrator|architect|engineering|"
+                                  r"specialist)|\bnoc\b|systems? administrator|\bsysadmin\b|"
+                                  r"it infrastructure|it systems? engineer|desktop support"),
         ("QA / SDET", True, r"\bqa\b|\bsdet\b|quality (assurance|engineer)|test (engineer|automation)|"
                             r"software engineer in test|automation engineer|tester"),
         ("Mobile", True, r"android|\bios\b|mobile|flutter|react native|kotlin|swift"),

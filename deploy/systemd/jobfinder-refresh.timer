@@ -1,0 +1,11 @@
+# Daily fetch at 07:00. Persistent: a run missed while the laptop was off happens at the next boot.
+[Unit]
+Description=Job Finder: daily job fetch
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

@@ -85,6 +85,11 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
           <div className="min-w-0">
             <div className="text-[14px] font-medium text-soft">{job.company}</div>
             <h2 className="mt-1 text-[26px] font-semibold leading-tight tracking-[-0.01em]">{job.title}</h2>
+            {job.is_active === false && (
+              <p className="mt-1.5 text-[12.5px] text-warn">
+                This posting closed{job.closed_at ? ` on ${job.closed_at.slice(0, 10)}` : ""}. It stays here because you tracked it; the link may no longer work.
+              </p>
+            )}
           </div>
           <button onClick={onClose} className="shrink-0 text-[12px] text-soft hover:text-ink" title="Close">Close <kbd>esc</kbd></button>
         </div>
@@ -125,7 +130,20 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
           <motion.dl variants={item} className="border-t border-rule">
           <Fact name="Fit">
             <span className="num text-[17px] font-medium">{Math.round(job.score)}</span><span className="text-faint"> / 100</span>
-            {job.score_reasons.length > 0 && <span className="mt-1 block text-[12.5px] leading-snug text-soft">{job.score_reasons.join(" · ")}</span>}
+            {/* One line per part of the score, its points on the right: the lines add up to the fit. */}
+            {job.score_reasons.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5 text-[12.5px] leading-snug">
+                {job.score_reasons.map((reason, i) => {
+                  const part = reason.match(/^(.*) ([+−])(\d+(?:\.\d+)?)$/);
+                  return (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span className="text-soft">{part ? part[1] : reason}</span>
+                      {part && <span className={`num shrink-0 ${part[2] === "+" ? "text-ink" : "text-bad"}`}>{part[2]}{part[3]}</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </Fact>
           <Fact name="Pay">
             <span className={`num text-[17px] font-medium ${TONE[pay.tone]}`}>{pay.text === "—" ? "Not stated" : pay.text}</span>
@@ -134,10 +152,7 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
                 {job.est_source === "ambitionbox" || job.est_source === "market" ? (
                   <>{job.est_note} Not exact: the posting does not state pay.{" "}
                     {job.est_url && <a href={job.est_url} target="_blank" rel="noopener" className="underline underline-offset-2">Source</a>}</>
-                ) : job.est_source === "claude"
-                  ? "Estimate by Claude for this role and level at this company. Not exact: the posting does not state pay."
-                  : "Rough guess from the company's general pay tier, the same for every role at this level. Not exact, and not from the posting."}
-                {job.est_source === "claude" && job.brain_note && <span className="block">{job.brain_note}</span>}
+                ) : "Rough guess from the company's general pay tier, the same for every role at this level. Not exact, and not from the posting."}
               </span>
             )}
             {pay.text === "—" && <span className="block text-[12px] text-soft">Not in the posting, and nothing to estimate from.</span>}

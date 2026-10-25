@@ -11,8 +11,11 @@ export function timeAgo(iso: string): string {
   return `${Math.floor(days / 365)}y`;      // some boards keep a posting open for years
 }
 
-/** Pay as the reader should see it, and whether it is stated, estimated or bad. */
-export function payOf(job: Job): { text: string; tone: "good" | "bad" | "plain" | "none" } {
+type PayTone = "good" | "company" | "market" | "band" | "bad" | "plain" | "none";
+
+/** Pay as the reader should see it. The tone says where the figure comes from (colour key in
+ * the Pay menu); red wins whatever the source, because failing your floor matters most. */
+export function payOf(job: Job): { text: string; tone: PayTone } {
   const bad = job.pay_verdict === "low";
   if (job.pay_verdict === "unpaid") return { text: "Unpaid", tone: "bad" };
   if (job.pay_verdict === "suspicious") return { text: "Looks fake", tone: "bad" };
@@ -28,7 +31,8 @@ export function payOf(job: Job): { text: string; tone: "good" | "bad" | "plain" 
     return { text: `₹${range} LPA`, tone: bad ? "bad" : "good" };
   }
   if (job.est_max_lpa != null) {
-    return { text: `~₹${job.est_min_lpa}–${job.est_max_lpa} LPA`, tone: bad ? "bad" : "plain" };
+    const source: PayTone = job.est_source === "ambitionbox" ? "company" : job.est_source === "market" ? "market" : "band";
+    return { text: `~₹${job.est_min_lpa}–${job.est_max_lpa} LPA`, tone: bad ? "bad" : source };
   }
   if (job.salary_text) return { text: job.salary_text, tone: "plain" };
   return { text: "—", tone: "none" };
@@ -51,7 +55,17 @@ export function placeOf(job: Job): string {
   return job.is_remote && !/remote/i.test(where) ? `${where}, Remote` : where;
 }
 
-export const TONE = { good: "text-good", bad: "text-bad", plain: "text-ink", none: "text-faint" };
+export const TONE: Record<PayTone, string> = {
+  good: "text-good", company: "text-company", market: "text-market", band: "text-warn",
+  bad: "text-bad", plain: "text-ink", none: "text-faint",
+};
+
+/** The pay colours, in the order of trust, for the key in the Pay menu. */
+export const PAY_KEY: [PayTone, string][] = [
+  ["good", "Stated in the posting"], ["company", "Reported at this company (AmbitionBox)"],
+  ["market", "India-wide average, not this company"], ["band", "Rough guess from the pay tier"],
+  ["bad", "Below your minimum, unpaid or fake"],
+];
 
 export const STATUS: Record<string, { label: string; dot: string }> = {
   saved: { label: "Shortlisted", dot: "bg-mark" },

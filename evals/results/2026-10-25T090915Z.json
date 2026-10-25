@@ -1,0 +1,157 @@
+{
+ "time": "2026-10-25T09:09:15Z",
+ "runs": [
+  {
+   "case": "ml-internships",
+   "attempt": 1,
+   "stopped": "error",
+   "model": "ministral-14b-latest",
+   "tokens": 6045,
+   "seconds": 4.67,
+   "answer": "I stopped before finishing (the free model providers are rate-limiting right now; try again in a minute). Here are the 20 jobs found so far.",
+   "scored": false
+  },
+  {
+   "case": "ml-internships",
+   "attempt": 2,
+   "stopped": "answered",
+   "model": "ministral-14b-latest",
+   "tokens": 15678,
+   "seconds": 10.83,
+   "answer": "There are 56 ML/AI internships in India. Only Tower Research (₹15–36 LPA, estimated) and Prepreater (₹2.4–15.6 LPA, stated) exceed your minimum stipend of ₹12 LPA. Most others pay ₹6.8–11.9 LPA (avg). Consider relaxing your pay floor or checking remote options.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "ml-internships",
+   "attempt": 3,
+   "stopped": "answered",
+   "model": "ministral-14b-latest",
+   "tokens": 6187,
+   "seconds": 5.57,
+   "answer": "56 machine learning internships match. The highest-paid is at Tower Research in Delhi NCR (15–36 LPA, rough estimate). Most pay 2.4–11.9 LPA (India-wide averages). Locations include Bengaluru, Pune, Hyderabad, Mumbai, and Delhi NCR. One in Chennai does not state pay.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "fresher-chennai",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "ministral-14b-latest",
+   "tokens": 4875,
+   "seconds": 5.57,
+   "answer": "There are 11 fresher jobs in Chennai. The highest-paying roles are at Amazon (18–28 LPA) and Arcadia (37–56 LPA, Data Science). Most pay figures are estimates from company averages or industry benchmarks. Let me know if you'd like details on any specific job.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "fresher-chennai",
+   "attempt": 2,
+   "stopped": "answered",
+   "model": "ministral-14b-latest",
+   "tokens": 5099,
+   "seconds": 7.11,
+   "answer": "11 fresher jobs in Chennai. The highest-paying is a Junior Data Scientist at Arcadia (37–56 LPA, estimate). Most pay 3–5 LPA (average estimates) or 14–28 LPA (estimates from AmbitionBox).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "fresher-chennai",
+   "attempt": 3,
+   "stopped": "answered",
+   "model": "ministral-14b-latest",
+   "tokens": 4989,
+   "seconds": 4.96,
+   "answer": "11 fresher jobs in Chennai. Top picks: Amazon (18–28 LPA), Arcadia (37–56 LPA, data science), and KLA (14–24 LPA, software engineering/QA). Pay at KLA and Wipro is estimated from India-wide averages, not company-specific figures.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  }
+ ],
+ "scored": 5,
+ "not_scored": 1,
+ "passed": 5,
+ "by_check": {
+  "english": [
+   5,
+   5
+  ],
+  "filters": [
+   5,
+   5
+  ],
+  "no_internal_names": [
+   5,
+   5
+  ],
+  "not_filters": [
+   5,
+   5
+  ],
+  "picks_match": [
+   5,
+   5
+  ],
+  "states_total": [
+   5,
+   5
+  ]
+ },
+ "by_case": {
+  "ml-internships": [
+   2,
+   2
+  ],
+  "fresher-chennai": [
+   3,
+   3
+  ]
+ },
+ "by_model": {
+  "ministral-14b-latest": [
+   5,
+   5
+  ]
+ },
+ "avg_tokens": 7366,
+ "avg_seconds": 6.8
+}

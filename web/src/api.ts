@@ -24,12 +24,14 @@ export type Job = {
   pay_verdict: string;
   est_min_lpa: number | null;
   est_max_lpa: number | null;
-  est_source: "band" | "claude" | "ambitionbox" | "market" | null;
+  est_source: "band" | "ambitionbox" | "market" | null;
   est_note: string | null;
   est_url: string | null;
   openings?: number;
+  /** false once the posting is gone; only your status tabs still show it. */
+  is_active?: boolean;
+  closed_at?: string | null;
   others?: { id: string; location: string; apply_url: string }[];
-  brain_note: string | null;
   snippet?: string;
   description?: string;
   departments?: string;
@@ -120,3 +122,53 @@ export const buildPrompt = (job_ids: string[]) =>
   json<{ prompt: string }>("/api/prompt", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_ids }),
   });
+
+export type PayFloors = { min_lpa: number; target_lpa: number };
+export const fetchPayFloors = () => json<PayFloors>("/api/settings/pay");
+
+/** Saves the floors to user_profile.yaml; the server then re-scores every job in the background. */
+export async function savePayFloors(floors: PayFloors): Promise<PayFloors & { rescoring: boolean }> {
+  const res = await fetch("/api/settings/pay", {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(floors),
+  });
+  const body = await res.json().catch(() => ({}));
+  // The server says why it refused ("need 0 < minimum <= target"), so show that, not "400".
+  if (!res.ok) throw new Error(body.detail ?? `${res.status} ${res.statusText}`);
+  return body;
+}
+
+export type AskStep =
+  | { kind: "model"; step: number; model: string; tokens_in: number | null; tokens_out: number | null; seconds: number; finish_reason: string; text: string }
+  | { kind: "tool"; step: number; tool: string; arguments: string; failed: boolean; result: string }
+  | { kind: "answer"; step: number; job_ids: string[] }
+  | { kind: "error"; step: number; error: string };
+export type AskResult = {
+  answer: string; stopped: "answered" | "step_limit" | "token_budget" | "error";
+  /** From the agent's last search, counted by the database: not the model's claim. */
+  total_matching: number | null;
+  /** That search's filters, to list every match; null when the agent never searched. */
+  search: Record<string, unknown> | null;
+  steps: AskStep[]; tokens_in: number; tokens_out: number; seconds: number; jobs: Job[];
+};
+
+/** Asks the agent; a few seconds. The jobs are database rows, in the agent's order. */
+export async function askJobs(question: string): Promise<AskResult> {
+  const res = await fetch("/api/ask", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `${res.status} ${res.statusText}`);
+  return body;
+}
+
+/** Every job matching the agent's last search, paged, without the groups of its picks. */
+export async function fetchAskMatches(search: Record<string, unknown>, exclude: string[], page: number,
+                                      size: number, sort: string, dir: "asc" | "desc") {
+  const res = await fetch("/api/ask/matches", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ search, exclude, page, size, sort, dir }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `${res.status} ${res.statusText}`);
+  return body as { total: number; page: number; size: number; jobs: Job[] };
+}

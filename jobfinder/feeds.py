@@ -191,7 +191,11 @@ def parse_internshala_detail(html: str) -> dict:
     parts = [str(node) for node in soup.select(
         ".internship_details .text-container, .internship_details .round_tabs_container"
     )]
-    return {"description_html": "\n".join(parts)}
+    # The stipend sits in the page header, outside the text blocks above. It is the pay
+    # this posting states; the text blocks quote the salary of the job offered afterwards.
+    stipend = soup.select_one(".stipend_container .stipend, span.stipend")
+    return {"description_html": "\n".join(parts),
+            "stipend_text": stipend.get_text(" ", strip=True) if stipend else None}
 
 
 # ── Google ───────────────────────────────────────────────────────────────────

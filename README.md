@@ -43,7 +43,7 @@ Keyboard: `j` / `k` move, `o` opens the posting, `s` shortlists, `a` marks appli
 
 ## Pay checks
 
-Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa: 9`, `target_lpa: 12`; an internship's stipend is annualised and held to the same floor, so 75,000 a month, unless you set `min_stipend_per_month`):
+Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa: 12`, `target_lpa: 18`; an internship's stipend is annualised and held to the same floor, so 1,00,000 a month, unless you set `min_stipend_per_month`):
 
 | Verdict | Meaning |
 |---|---|
@@ -54,11 +54,25 @@ Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa
 | Estimate meets minimum | Pay not stated; the estimate reaches your floor |
 | Not stated | No pay in the posting and no basis for an estimate |
 
+### Changing your pay floor
+
+**In the app:** open the **Pay** menu. The top row, *Your pay floor (LPA)*, has **Min** and **Target**: change either and press **Save**. The new numbers are written into `user_profile.yaml` (only those two lines; your comments stay), then every job is re-scored in the background. That takes about a minute and a half for ~23,000 jobs; the rail shows *Re-scoring n/total* and the table reloads when it ends. A minimum above the target is refused with a message, and nothing is saved while a refresh is running.
+
+**By hand:** edit `min_lpa` / `target_lpa` under `job_preferences` in `user_profile.yaml`, then re-score:
+
+```bash
+.venv/bin/python -m jobfinder rescore
+```
+
+**Over the API:** `GET /api/settings/pay` reads the floors; `PUT /api/settings/pay` with `{"min_lpa": 12, "target_lpa": 18}` saves them and starts the re-score.
+
+All three change the same two lines, so the file, the app and the Ask agent (which reads your profile on every question) always agree.
+
 Low-pay, unpaid and fake listings are hidden by default; the **Hide low-pay, unpaid and fake** switch shows them again.
 
 ### When the posting does not state pay
 
-Most postings in India do not, so the app fills in a figure and always marks it. In order of preference:
+Most postings in India do not, so the app fills in a figure and always marks it. The figure comes from reported salaries or a fixed tier table, never from an AI model guessing: those guesses were too often wrong. In order of preference:
 
 1. **AmbitionBox (`est`).** Reported salaries for that designation at that company, for the experience the job asks for. The job card shows the average, how many salaries it is based on, and a link to the page.
 
@@ -67,14 +81,8 @@ Most postings in India do not, so the app fills in a figure and always marks it.
    ```
 
    Lookups are cached, so each company and designation is requested once, and later fetches reuse them. Small samples (one or two salaries) are shown as such; treat them with care.
-2. **Claude (`est`, needs an API key).** For jobs AmbitionBox has no page for, Claude estimates the range and flags unpaid or scam-like listings.
-
-   ```bash
-   export ANTHROPIC_API_KEY=sk-ant-...             # from https://console.anthropic.com
-   .venv/bin/python -m jobfinder brain --limit 300
-   ```
-3. **Market average (`mkt`).** For a company AmbitionBox has no page for and that is not in the tier list, the India-wide average for that role and experience across all companies. It is shown for reference only and never hides a job, because it says nothing about that particular company.
-4. **Pay tier (`guess`).** A fallback from `jobfinder/paybands.py`: five company tiers with one range per level. It is the same for every role at a company and level, so use it only as a ballpark.
+2. **Market average (`mkt`).** For a company AmbitionBox has no page for and that is not in the tier list, the India-wide average for that role and experience across all companies. It is shown for reference only and never hides a job, because it says nothing about that particular company.
+3. **Pay tier (`guess`).** A fallback from `jobfinder/paybands.py`: five company tiers with one range per level. It is the same for every role at a company and level, so use it only as a ballpark.
 
 A job is hidden as low pay when its stated pay, or the top of its estimate, is under your minimum.
 
@@ -140,7 +148,6 @@ Edit the entry in `companies.yaml` to change `keywords`, `max_pages` or `posted_
 | `python -m jobfinder serve --port 8000` | Start the web app |
 | `python -m jobfinder discover seeds.txt --write` | Find job boards for new companies |
 | `python -m jobfinder pay --limit 300` | Look up pay on AmbitionBox for jobs that do not state it |
-| `python -m jobfinder brain --limit 300` | Have Claude estimate pay and flag fake listings (needs an API key) |
 | `python -m jobfinder rescore` | Re-score stored jobs after a profile change |
 | `python -m jobfinder health` | Print companies whose last fetch looks wrong |
 | `python -m pytest tests` | Run the parser tests |
@@ -158,7 +165,6 @@ jobfinder/
   pay.py        pay verdict against your salary floors
   portal.py     AmbitionBox pay lookup, cached per company and designation
   paybands.py   fallback pay ranges by company tier and level
-  brain.py      Claude pay estimates and fake-listing flags
   discover.py   find a company's job board
   server.py     API for the web app
   db.py         SQLite store (data/jobs.db)

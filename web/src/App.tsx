@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { NumberTicker, SlidingHighlight, SPRING } from "./fx";
 import {
-  buildPrompt, emptyFilters, fetchFacets, fetchJobs, fetchProgress, setState, startRefresh,
-  type Facets, type Filters, type Job, type Progress,
+  askJobs, buildPrompt, emptyFilters, fetchAskMatches, fetchFacets, fetchJobs, fetchProgress, setState, startRefresh,
+  type AskResult, type Facets, type Filters, type Job, type Progress,
 } from "./api";
+import { AskAnswer, AskBar } from "./Ask";
 import FilterBar from "./Filters";
-import { JobRows, TableHead } from "./JobTable";
+import { JobRows, SectionHead, TableHead } from "./JobTable";
 import Detail, { forgetJobs, loadJob } from "./Detail";
 import Inspector from "./Inspector";
 import { CoverageView } from "./Views";
@@ -31,7 +32,7 @@ function Logo() {
 }
 
 export default function App() {
-  const [view, setView] = useState("all");            // all | new | <status> | coverage
+  const [view, setView] = useState("all");            // all | new | ask | <status> | coverage
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [search, setSearch] = useState("");
   const [facets, setFacets] = useState<Facets | null>(null);
@@ -51,6 +52,12 @@ export default function App() {
   const [version, setVersion] = useState(0);
   const [showKeys, setShowKeys] = useState(false);
   const [setKey, setSetKey] = useState(0);            // bumps per new result set, replaying the row entrance
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<AskResult | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [askError, setAskError] = useState("");
+  const [matches, setMatches] = useState<Job[]>([]);       // every other job matching the agent's search
+  const [askSort, setAskSort] = useState<{ sort: string; dir: "asc" | "desc" }>({ sort: "score", dir: "desc" });
   const request = useRef(0);
   const table = useRef<HTMLElement>(null);
   const searchBox = useRef<HTMLInputElement>(null);
@@ -100,7 +107,46 @@ export default function App() {
 
   // A changed query or page size goes back to page 1; paging keeps the query.
   useEffect(() => { setPage(1); }, [query, size, view]);
-  useEffect(() => { if (view !== "coverage") load(query, page, size); }, [query, version, view, page, size, load]);
+  useEffect(() => { if (view !== "coverage" && view !== "ask") load(query, page, size); }, [query, version, view, page, size, load]);
+
+  // The Ask view's table: the agent's picks, then every other job its last search matched,
+  // paged and sorted like the main table. Entering the view also outdates any list still
+  // loading for another view, so that list cannot land on top of the answer.
+  useEffect(() => { setPage(1); }, [answer, askSort]);
+  useEffect(() => {
+    if (view !== "ask") return;
+    const mine = ++request.current;
+    setError("");
+    if (!answer?.search) {
+      setMatches([]);
+      setTotal(0);
+      setLoading(asking);
+      return;
+    }
+    setLoading(true);
+    fetchAskMatches(answer.search, answer.jobs.map((j) => j.id), page, size, askSort.sort, askSort.dir)
+      .then((r) => { if (mine === request.current) { setMatches(r.jobs); setTotal(r.total); } })
+      .catch((e) => { if (mine === request.current) setError(`Could not load the other matches (${(e as Error).message}).`); })
+      .finally(() => { if (mine === request.current) setLoading(false); });
+  }, [view, answer, asking, page, size, askSort]);
+  // j / k and the card move across both sections, picks first.
+  useEffect(() => {
+    if (view !== "ask") return;
+    setJobs([...(answer?.jobs ?? []), ...matches]);
+    setSetKey((k) => k + 1);
+  }, [view, answer, matches]);
+  const ask = useCallback(async (q: string) => {
+    setQuestion(q);
+    setAsking(true);
+    setAskError("");
+    try {
+      setAnswer(await askJobs(q.trim()));
+    } catch (e) {
+      setAskError(`Could not ask: ${(e as Error).message}`);
+    } finally {
+      setAsking(false);
+    }
+  }, []);
   const pages = Math.max(1, Math.ceil(total / size));
   const goTo = useCallback((p: number) => setPage(Math.min(Math.max(1, p), Math.max(1, Math.ceil(total / size)))), [total, size]);
   const changeSize = (n: number) => { localStorage.setItem("rowsPerPage", String(n)); setSize(n); };
@@ -136,7 +182,7 @@ export default function App() {
   // In a status view (Shortlisted, Applied, …) a job leaves the list as soon as
   // its status stops matching the view.
   const leaves = useCallback(
-    (status: string | null) => !["all", "new", "coverage"].includes(view) && status !== view, [view]);
+    (status: string | null) => !["all", "new", "ask", "coverage"].includes(view) && status !== view, [view]);
   const mark = useCallback(async (job: Job, status: string) => {
     const next = job.status === status ? "" : status;
     await setState(job.id, { status: next });
@@ -224,6 +270,7 @@ export default function App() {
         </div>
         {railItem("all", "All")}
         {railItem("new", "New today")}
+        {railItem("ask", "Ask")}
         <div className="my-2 border-t border-rule" />
         {STATUS_VIEWS.map(([key, label]) => railItem(key, label))}
         <div className="my-2 border-t border-rule" />
@@ -234,7 +281,7 @@ export default function App() {
             className="block text-left hover:text-ink disabled:text-faint"
           >
             {/* After the boards comes the long pass over job descriptions; say so, or the count just sits at the total. */}
-            {running ? <span className="num">{progress?.current === "job descriptions" ? "Fetching descriptions" : progress?.total ? `Fetching ${progress.done}/${progress.total}` : "Fetching…"}</span> : "Refresh jobs"}
+            {running ? <span className="num">{progress?.current === "re-scoring" ? `Re-scoring ${progress.done}/${progress.total}` : progress?.current === "job descriptions" ? "Fetching descriptions" : progress?.total ? `Fetching ${progress.done}/${progress.total}` : "Fetching…"}</span> : "Refresh jobs"}
           </button>
           <button onClick={() => setShowKeys(true)} className="block hover:text-ink">Shortcuts <kbd>?</kbd></button>
         </div>
@@ -243,21 +290,29 @@ export default function App() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-rule px-3 py-1.5">
           <select value={view} onChange={(e) => setView(e.target.value)} className="h-7 rounded-[3px] border border-rule bg-paper px-1 text-[12.5px] md:hidden">
-            <option value="all">All</option><option value="new">New today</option>
+            <option value="all">All</option><option value="new">New today</option><option value="ask">Ask</option>
             {STATUS_VIEWS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             <option value="coverage">Coverage</option>
           </select>
-          <div className="relative w-full max-w-[300px] flex-1">
-            <input
-              ref={searchBox} value={search} onChange={(e) => { setSearch(e.target.value); if (view === "coverage") setView("all"); }}
-              placeholder="Search"
-              className="h-7 w-full rounded-[3px] border border-rule bg-sheet pl-2 pr-7 text-[12.5px] outline-none placeholder:text-faint focus:border-soft"
-            />
-            <kbd className="absolute right-1.5 top-[6px]">/</kbd>
-          </div>
-          {(view === "all" || view === "new") && <FilterBar facets={facets} filters={filters} onChange={setFilters} />}
+          {view === "ask" ? (
+            <AskBar value={question} onChange={setQuestion} onAsk={ask} busy={asking} inputRef={searchBox} />
+          ) : (
+            <div className="relative w-full max-w-[300px] flex-1">
+              <input
+                ref={searchBox} value={search} onChange={(e) => { setSearch(e.target.value); if (view === "coverage") setView("all"); }}
+                placeholder="Search"
+                className="h-7 w-full rounded-[3px] border border-rule bg-sheet pl-2 pr-7 text-[12.5px] outline-none placeholder:text-faint focus:border-soft"
+              />
+              <kbd className="absolute right-1.5 top-[6px]">/</kbd>
+            </div>
+          )}
+          {(view === "all" || view === "new") && <FilterBar facets={facets} filters={filters} onChange={setFilters} onPaySaved={() => {
+            // The re-score runs on the server; the progress poll above reloads the table when it ends.
+            setProgress({ running: true, done: 0, total: 0, current: "re-scoring" });
+            setVersion((v) => v + 1);
+          }} />}
           <p className="ml-auto whitespace-nowrap text-[12px] text-soft">
-            {view !== "coverage" && <><NumberTicker value={total} className="num text-ink" /> shown · </>}
+            {view !== "coverage" && <><NumberTicker value={view === "ask" ? (answer?.total_matching ?? 0) : total} className="num text-ink" />{view === "ask" ? " match" : " shown"} · </>}
             <NumberTicker value={facets?.rows.new ?? 0} className="num text-ink" /> new since yesterday
           </p>
         </header>
@@ -268,20 +323,43 @@ export default function App() {
         ) : (
           <main className="flex min-h-0 flex-1">
             <div className="flex min-w-0 flex-1 flex-col">
+            {view === "ask" && <AskAnswer result={answer} error={askError} busy={asking} onExample={ask} />}
             <section ref={table} className="thin @container min-h-0 flex-1 overflow-y-auto" role="table">
-              <TableHead sort={filters.sort} dir={filters.dir} onSort={(key, dir) => setFilters({ ...filters, sort: key, dir })} />
+              {/* In Ask the headers sort the other matches; the picks keep the agent's order. */}
+              <TableHead
+                sort={view === "ask" ? askSort.sort : filters.sort} dir={view === "ask" ? askSort.dir : filters.dir}
+                onSort={(key, dir) => (view === "ask" ? setAskSort({ sort: key, dir }) : setFilters({ ...filters, sort: key, dir }))}
+              />
               {error && <p className="border-b border-rule px-3 py-2 text-bad">{error}</p>}
               {loading && !jobs.length && Array.from({ length: 14 }, (_, i) => <div key={i} className="placeholder mx-3 my-1.5 h-6" />)}
-              {!loading && !error && !jobs.length && (
+              {!loading && !error && !jobs.length && (view !== "ask" || answer) && (
                 <p className="px-3 py-3 text-soft">
-                  {view !== "all" && view !== "new" ? "Nothing here yet."
+                  {view === "ask" ? "This answer has no jobs to show."
+                    : view !== "all" && view !== "new" ? "Nothing here yet."
                     : facets?.totals.jobs ? "No jobs match these filters." : "No jobs yet. Use Refresh jobs to fetch them."}
                 </p>
               )}
-              <JobRows jobs={jobs} setKey={setKey} openId={openId} picked={picked} onOpen={open} />
+              {view === "ask" && answer ? (
+                <>
+                  {answer.jobs.length > 0 && (
+                    <SectionHead title={`Agent's picks · ${answer.jobs.length}`} note="chosen and ordered by the agent" />
+                  )}
+                  <JobRows jobs={answer.jobs} setKey={setKey} openId={openId} picked={picked} onOpen={open} pinned />
+                  {answer.search && total > 0 && (
+                    <SectionHead
+                      title={`All other matches · ${total.toLocaleString("en-IN")}`}
+                      note="every other job that matches the agent's last search, not judged by it"
+                    />
+                  )}
+                  <JobRows jobs={matches} setKey={setKey} openId={openId} picked={picked} onOpen={open} />
+                </>
+              ) : (
+                <JobRows jobs={jobs} setKey={setKey} openId={openId} picked={picked} onOpen={open} />
+              )}
             </section>
-            {/* Nothing here wraps. As the bar narrows it drops, in turn, the label, First and Last, then the range. */}
-            <footer className="@container flex h-10 shrink-0 items-center gap-4 whitespace-nowrap border-t border-rule px-3 text-[12.5px] text-soft">
+            {/* Nothing here wraps. As the bar narrows it drops, in turn, the label, First and Last, then the range.
+                In Ask it pages the other matches; the picks stay on top of every page. */}
+            {(view !== "ask" || answer?.search) && <footer className="@container flex h-10 shrink-0 items-center gap-4 whitespace-nowrap border-t border-rule px-3 text-[12.5px] text-soft">
               <label className="flex items-center gap-2">
                 <span className="hidden @3xl:inline">Rows per page</span>
                 <select
@@ -305,7 +383,7 @@ export default function App() {
                 <button onClick={() => goTo(pages)} disabled={page >= pages || loading} title="Last page"
                   className="hidden h-7 rounded-[3px] border border-rule px-2 hover:text-ink disabled:opacity-35 @2xl:block">Last</button>
               </div>
-            </footer>
+            </footer>}
             </div>
           </main>
         )}

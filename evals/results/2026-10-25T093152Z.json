@@ -1,0 +1,176 @@
+{
+ "time": "2026-10-25T09:31:52Z",
+ "runs": [
+  {
+   "case": "ml-internships",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-120b",
+   "tokens": 6113,
+   "seconds": 3.37,
+   "answer": "There are 26 machine‑learning internships. The top matches are: Tower Research (Intern – AI/ML, Delhi NCR, 15‑36 LPA), SkillsCapital (Software Engineer Intern – AI/ML, India‑wide, 3.8‑7 LPA), OSWAR teck (Software & AI Engineering intern, Jaipur, 6.8‑11.9 LPA), Discover Dollar (AI Engineer Intern, Bengaluru, 2.4‑4.9 LPA), Tower Research Capital (Intern – AI/ML, Delhi NCR, 2.2‑3.7 LPA), Yodaplus (AI Engineering Intern, India, 6.8‑11.9 LPA), EA (AI Full Stack Intern, Hyderabad, 6.8‑11.9 LPA), EA (AI Software Engineer Intern, Hyderabad, 6.8‑11.9 LPA), Sprinto (AI Implementation Intern, Bengaluru, 6.8‑11.9 LPA), Lexsi Labs (AI Research Internship, Mumbai, 6.8‑11.9 LPA).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": false,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": false
+  },
+  {
+   "case": "ml-internships",
+   "attempt": 2,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5268,
+   "seconds": 4.54,
+   "answer": "There are 16 machine‑learning internship listings in your database. The top picks (sorted by fit score) are: Tower Research’s Intern – AI/ML (Delhi NCR), SkillsCapital’s AI/ML & Agentic AI Intern (India), Tower Research Capital’s Intern – AI/ML (Delhi NCR), Electronic Arts’ AI Full Stack Intern (Hyderabad), Sprinto’s AI Implementation Intern (Bengaluru), Lexsi Labs’ AI Research Internship (Mumbai), GRADTWIN SERVICES’ Machine Learning Intern (Chennai), HUEWINE’s Software & AI Engineer Intern (Tamil Nadu), MJC GLOBALTECH’s AI Engineer Internship (Bengaluru), LearnDepth Academy’s Machine Learning Instructor (remote), Siemens Gamesa’s Automation/AI Intern (Bengaluru), Marvell’s Research Intern, Physical AI and GPU (Hyderabad), Simpli Intern’s Machine Learning Intern (remote), Calyp Innovations’ AI Engineer Assistant (remote), Unessa Foundation’s Artificial Intelligence Intern (remote), and Apple’s PhD Intern, Machine Learning (India).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": false,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": false
+  },
+  {
+   "case": "fresher-chennai",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 4417,
+   "seconds": 4.41,
+   "answer": "There are 11 fresher‑level openings in Chennai. The top picks (by fit score) are:\n1. Amazon – System Development Engineer I\n2. Arcadia – Junior Data Scientist\n3. Akku – Junior DevOps Engineer\n4. KLA – Applications Engineer\n5. KLA – Software Engineer",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "fresher-chennai",
+   "attempt": 2,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 4509,
+   "seconds": 4.35,
+   "answer": "There are 11 fresher jobs in Chennai. The top matches (sorted by fit) are: Amazon System Development Engineer I, Arcadia Junior Data Scientist, Akku Junior DevOps Engineer, KLA Applications Engineer, KLA Software Engineer, KLA Engr, Software QA 2, Golden Opportunities Full‑Stack Developer, KLA Engineer, Product Applications, KLA Product Engineer, and Larsen & Toubro Junior Developer – AI.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "count-mumbai",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-120b",
+   "tokens": 5274,
+   "seconds": 8.6,
+   "answer": "There are 391 jobs in Mumbai. Example: IMC Trading – Site Reliability Engineer (35–80 LPA, rough guess from the company's pay tier).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "count-mumbai",
+   "attempt": 2,
+   "stopped": "answered",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "tokens": 11816,
+   "seconds": 24.47,
+   "answer": "There are 391 jobs in Mumbai in the database.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  }
+ ],
+ "scored": 6,
+ "not_scored": 0,
+ "passed": 4,
+ "by_check": {
+  "english": [
+   6,
+   6
+  ],
+  "filters": [
+   6,
+   6
+  ],
+  "no_internal_names": [
+   6,
+   6
+  ],
+  "not_filters": [
+   6,
+   6
+  ],
+  "picks_match": [
+   4,
+   4
+  ],
+  "states_total": [
+   4,
+   6
+  ]
+ },
+ "by_case": {
+  "ml-internships": [
+   0,
+   2
+  ],
+  "fresher-chennai": [
+   2,
+   2
+  ],
+  "count-mumbai": [
+   2,
+   2
+  ]
+ },
+ "by_model": {
+  "openai/gpt-oss-120b": [
+   1,
+   2
+  ],
+  "openai/gpt-oss-20b": [
+   2,
+   3
+  ],
+  "nvidia/nemotron-3-ultra-550b-a55b:free": [
+   1,
+   1
+  ]
+ },
+ "avg_tokens": 6233,
+ "avg_seconds": 8.3
+}

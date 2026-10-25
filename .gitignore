@@ -12,3 +12,6 @@ dashboard_preview.html
 data/
 web/node_modules/
 web/dist/
+
+# Console copy of the last eval run (the JSON in evals/results is the record)
+evals/last-run.log

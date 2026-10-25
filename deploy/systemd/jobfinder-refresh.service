@@ -1,0 +1,12 @@
+# Fetches every job source once. Started by jobfinder-refresh.timer; installed by `make up`
+# (scripts/timer.sh writes this file to ~/.config/systemd/user with @REPO@ filled in).
+[Unit]
+Description=Job Finder: fetch jobs from every source
+
+[Service]
+Type=oneshot
+WorkingDirectory=@REPO@
+ExecStart=@REPO@/.venv/bin/python -m jobfinder run
+# A full fetch takes about 30 minutes; let it, but never forever.
+TimeoutStartSec=2h
+Nice=10
