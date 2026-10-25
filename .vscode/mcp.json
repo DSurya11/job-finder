@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "job-finder": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": ["-m", "jobfinder", "mcp"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

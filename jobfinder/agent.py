@@ -10,6 +10,7 @@ the answer: every job id in it must have come back from a tool during this run.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sqlite3
@@ -24,6 +25,8 @@ from openai import APIError, OpenAI, RateLimitError
 from . import agent_tools, db
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+logger = logging.getLogger("jobfinder.agent")
 
 BASE_URL = os.getenv("OMNIROUTE_BASE_URL", "http://127.0.0.1:20130/v1")
 MODEL = os.getenv("OMNIROUTE_MODEL", "agent-combo")
@@ -52,7 +55,7 @@ Today is {today}. The job data was last fetched on {fetched}; nothing newer is i
   When the user asks to see or list jobs, give_answer the best ones, up to 20.
 - If nothing matches, say which filter emptied the result and what to relax. Describe
   filters in plain words ("the internship filter"), never by tool or parameter names.
-- Reply in the language of the question.
+- Always reply in English. (Measured: "the language of the question" got Spanish answers.)
 - Say where a pay figure comes from when you use it: stated, or which kind of estimate.
   Never estimate or guess pay yourself; if a job has none, say it is not stated.
 - Finish by calling give_answer: a short plain-text answer (at most 120 words) and the ids
@@ -125,20 +128,60 @@ def run_tool(conn: sqlite3.Connection, name: str, raw_arguments: str) -> tuple[s
 
 
 def ask(question: str, conn: sqlite3.Connection | None = None, client: OpenAI | None = None,
-        model: str = MODEL, max_steps: int = MAX_STEPS) -> Result:
+        model: str = MODEL, max_steps: int = MAX_STEPS, source: str = "cli",
+        cache: bool = True) -> Result:
+    """cache=False makes OmniRoute ask the model every time; evals need that, or repeats of a
+    question would return one stored answer and hide how much the model varies."""
     started = time.monotonic()
+    started_at = db.now()
     own_conn = conn is None
     conn = conn or db.connect()
     try:
         client = client or make_client()
-        return _loop(question, conn, client, model, max_steps, started)
+        headers = None if cache else {"x-omniroute-no-cache": "true"}
+        result = _loop(question, conn, client, model, max_steps, started, headers)
+        save_run(conn, question, result, source, started_at)
+        return result
     finally:
         if own_conn:
             conn.close()
 
 
+def save_run(conn: sqlite3.Connection, question: str, result: Result, source: str,
+             started_at: str) -> int | None:
+    """Keep the run's trace. Never breaks an answer: a failed save is only logged."""
+    try:
+        models = sorted({s["model"] for s in result.steps if s["kind"] == "model"})
+        cur = conn.execute(
+            "INSERT INTO agent_runs (started_at, source, question, answer, stopped, job_ids, "
+            "total_matching, search, steps, models, tokens_in, tokens_out, seconds) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (started_at, source, question, result.answer, result.stopped, json.dumps(result.job_ids),
+             result.total_matching, json.dumps(result.search), json.dumps(result.steps),
+             json.dumps(models), result.tokens_in, result.tokens_out, result.seconds))
+        conn.commit()
+        return cur.lastrowid
+    except sqlite3.Error as error:
+        logger.warning("could not save the agent run: %s", error)
+        return None
+
+
+def recent_runs(conn: sqlite3.Connection, limit: int = 20) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM agent_runs ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+
+
+def load_run(conn: sqlite3.Connection, run_id: int) -> Result | None:
+    row = conn.execute("SELECT * FROM agent_runs WHERE id = ?", (run_id,)).fetchone()
+    if not row:
+        return None
+    return Result(answer=row["answer"], job_ids=json.loads(row["job_ids"]), stopped=row["stopped"],
+                  total_matching=row["total_matching"], search=json.loads(row["search"]),
+                  steps=json.loads(row["steps"]), tokens_in=row["tokens_in"],
+                  tokens_out=row["tokens_out"], seconds=row["seconds"])
+
+
 def _loop(question: str, conn: sqlite3.Connection, client: OpenAI, model: str,
-          max_steps: int, started: float) -> Result:
+          max_steps: int, started: float, headers: dict | None = None) -> Result:
     fetched = (conn.execute("SELECT MAX(last_seen) FROM jobs").fetchone()[0] or "never")[:10]
     messages: list[dict] = [
         {"role": "system", "content": SYSTEM.format(today=date.today().isoformat(), fetched=fetched)},
@@ -148,10 +191,17 @@ def _loop(question: str, conn: sqlite3.Connection, client: OpenAI, model: str,
     seen: list[str] = []           # every job id a tool returned this run, first-seen order
     result = Result(answer="", job_ids=[], stopped="")
 
+    narrowed: dict = {}         # the last search's description-filter cost, when it had one
+
     def finish(answer: str, job_ids: list[str], stopped: str) -> Result:
         # The answer is shown as plain text. The prompt asks for that, and models still send
         # **bold** now and then, so code removes the markers rather than trusting the prompt.
         answer = re.sub(r"\*\*|__|^#+\s*", "", answer, flags=re.M)
+        if stopped == "answered" and narrowed:
+            # Measured: told "the description filter cut 56 matches to 16", gpt-oss still
+            # answered "16 machine learning internships" (2 of 2 runs). So code says it.
+            answer += (f"\n\n{narrowed['without']} jobs match without the description filter "
+                       f"({narrowed['words']}); the {narrowed['total']} above also mention those words.")
         result.answer, result.job_ids, result.stopped = answer, job_ids, stopped
         result.seconds = round(time.monotonic() - started, 2)
         return result
@@ -168,7 +218,8 @@ def _loop(question: str, conn: sqlite3.Connection, client: OpenAI, model: str,
         call_started = time.monotonic()
         try:
             response = client.chat.completions.create(
-                model=model, messages=messages, tools=tools, tool_choice="auto", temperature=0)
+                model=model, messages=messages, tools=tools, tool_choice="auto", temperature=0,
+                extra_headers=headers)
         except APIError as error:
             result.steps.append({"step": step, "kind": "error", "error": str(error)[:300]})
             # The raw error stays in the steps; the answer says what it means.
@@ -222,9 +273,17 @@ def _loop(question: str, conn: sqlite3.Connection, client: OpenAI, model: str,
                 if not failed:
                     seen.extend(i for i in _ids_in(text) if i not in seen)
                     if call.function.name == "search_jobs":
-                        result.total_matching = json.loads(text)["total_matching"]
+                        found = json.loads(text)
+                        result.total_matching = found["total_matching"]
                         result.search = {k: v for k, v in json.loads(call.function.arguments or "{}").items()
                                          if k not in ("sort", "limit")}
+                        narrowed.clear()
+                        if "without_description_filter" in found:
+                            words = [result.search.get("description_words") or "",
+                                     *(result.search.get("description_any") or [])]
+                            narrowed.update(without=found["without_description_filter"],
+                                            total=found["total_matching"],
+                                            words=", ".join(f'"{w}"' for w in words if w))
             result.steps.append({
                 "step": step, "kind": "tool", "tool": call.function.name,
                 "arguments": call.function.arguments, "failed": failed, "result": text[:300],

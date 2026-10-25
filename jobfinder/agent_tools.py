@@ -170,6 +170,20 @@ def search_jobs(conn: sqlite3.Connection, *, sort: str = "best_fit", limit: int 
             for name in active}
         result["note"] = ("Nothing matches. if_you_drop gives how many jobs would match with that "
                           "one filter removed.")
+    described = {k: _OFF[k] for k in ("description_words", "description_any")
+                 if filters[k] not in (_OFF[k], None, "", [])}
+    if total and described:
+        # Measured (eval 2): asked for "machine learning internships", the model added
+        # description_any ["machine learning"] on top of the ML / AI role and reported 16 of 56.
+        # The cost of the description filter is counted here, as if_you_drop does for empty results.
+        without = queries.find_jobs(conn, *filter_sql({**filters, **described}), title_words,
+                                    "score", None, 1, 1)[0]
+        if without >= 2 * total:
+            result["without_description_filter"] = without
+            result["note"] = ((result.get("note", "") + " ").lstrip() +
+                              f"The description filter cut {without} matches to {total}. Keep it "
+                              "only if the user asked for those words in the description; the role "
+                              "filter already covers the role.")
     if total == 0 and posted_within_days:
         # "Nothing this week" is often the data being old, not the market being empty.
         newest = conn.execute("SELECT MAX(COALESCE(NULLIF(posted_at, ''), substr(first_seen, 1, 10))) "

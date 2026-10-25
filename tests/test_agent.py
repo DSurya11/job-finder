@@ -145,3 +145,32 @@ def test_a_rate_limit_is_explained_in_plain_words(conn):
     result = agent.ask("q", conn=conn, client=FakeClient(limited))
     assert "rate-limiting right now" in result.answer
     assert "429" not in result.answer and "429" in result.steps[-1]["error"]
+
+
+def test_every_run_is_kept_with_its_trace(conn):
+    fake = FakeClient(reply(SEARCH), reply(("give_answer", {"answer": "Two.", "job_ids": ["k1"]})))
+    agent.ask("kubernetes?", conn=conn, client=fake, source="eval")
+    row = agent.recent_runs(conn, 1)[0]
+    assert (row["question"], row["source"], row["stopped"], row["total_matching"]) == ("kubernetes?", "eval", "answered", 2)
+    again = agent.load_run(conn, row["id"])
+    assert [s["kind"] for s in again.steps] == ["model", "tool", "model", "answer"]
+
+
+def test_a_failed_save_never_breaks_the_answer(conn):
+    conn.execute("DROP TABLE agent_runs")
+    fake = FakeClient(reply(SEARCH), reply(("give_answer", {"answer": "Two.", "job_ids": ["k1"]})))
+    assert agent.ask("q", conn=conn, client=fake).answer == "Two."
+
+
+def test_a_description_filter_that_cut_most_matches_is_stated_by_code(conn):
+    # Measured: told "the description filter cut 56 matches to 16", the model still answered 16.
+    db.upsert_jobs(conn, [_job(f"x{i}") for i in range(3)] + [_job("helm", description="Helm on EKS.")],
+                   "2026-10-12T00:00:00Z")
+    narrow = ("search_jobs", {"roles": ["DevOps / SRE"], "description_any": ["helm"]})
+    fake = FakeClient(reply(narrow), reply(("give_answer", {"answer": "1 job matches.", "job_ids": ["helm"]})))
+    result = agent.ask("devops internships", conn=conn, client=fake)
+    assert result.answer.endswith('6 jobs match without the description filter ("helm"); '
+                                  "the 1 above also mention those words.")
+    wide = FakeClient(reply(("search_jobs", {"roles": ["DevOps / SRE"]})),
+                      reply(("give_answer", {"answer": "6 jobs match.", "job_ids": ["k1"]})))
+    assert agent.ask("devops internships", conn=conn, client=wide).answer == "6 jobs match."

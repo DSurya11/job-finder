@@ -90,3 +90,16 @@ def test_an_empty_date_search_says_how_old_the_data_is(conn):
     found = json.loads(tools.search_jobs(conn, posted_within_days=7))
     assert found["total_matching"] == 0
     assert found["newest_posting_in_data"] == "2026-09-01"
+
+
+def test_a_description_filter_that_cuts_most_matches_is_counted(conn):
+    # Measured: "machine learning internships" became role ML / AI plus description_any
+    # ["machine learning"], and the answer said 16 when 56 matched the role.
+    db.upsert_jobs(conn, [_job(f"helm{i}", description="Helm charts on EKS.") for i in range(2)],
+                   "2026-10-24T00:00:00Z")
+    found = json.loads(tools.search_jobs(conn, roles=["DevOps / SRE"], description_any=["helm"]))
+    assert found["total_matching"] == 2
+    assert found["without_description_filter"] == 28
+    assert "cut 28 matches to 2" in found["note"]
+    most = json.loads(tools.search_jobs(conn, roles=["DevOps / SRE"], description_words="kubernetes"))
+    assert "without_description_filter" not in most          # it barely narrowed: no note

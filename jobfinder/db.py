@@ -74,6 +74,16 @@ CREATE TABLE IF NOT EXISTS portal_pay (
     company TEXT, designation TEXT, data TEXT, fetched_at TEXT,
     PRIMARY KEY (company, designation)
 );
+
+-- Every Ask run: what was asked, each step, what came back. Read when debugging an answer,
+-- and real questions become eval cases.
+CREATE TABLE IF NOT EXISTS agent_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at TEXT, source TEXT,          -- app | cli | eval
+    question TEXT, answer TEXT, stopped TEXT, job_ids TEXT,
+    total_matching INTEGER, search TEXT, steps TEXT, models TEXT,
+    tokens_in INTEGER, tokens_out INTEGER, seconds REAL
+);
 """
 
 # Added after the first release; created on connect if an older database lacks them.

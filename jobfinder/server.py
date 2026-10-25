@@ -331,7 +331,7 @@ def ask_jobs(body: AskIn):
     status) is read here from the database.
     """
     try:
-        result = agent.ask(body.question.strip())
+        result = agent.ask(body.question.strip(), source="app")
     except RuntimeError as error:                   # no OmniRoute key configured
         raise HTTPException(503, str(error))
     conn = db.connect()

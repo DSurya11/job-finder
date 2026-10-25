@@ -14,6 +14,8 @@
   --color-good: var(--good);
   --color-bad: var(--bad);
   --color-warn: var(--warn);
+  --color-company: var(--company);
+  --color-market: var(--market);
 }
 
 :root {
@@ -28,6 +30,8 @@
   --good: #1f5f3f;
   --bad: #a8401c;
   --warn: #8a6a12;
+  --company: #2f5f9e;   /* pay from salaries reported at the company */
+  --market: #6b4fa0;    /* pay from the India-wide average */
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -42,6 +46,8 @@
     --good: #62b086;
     --bad: #d98058;
     --warn: #cfae52;
+    --company: #7aa7e0;
+    --market: #a990d8;
   }
 }
 

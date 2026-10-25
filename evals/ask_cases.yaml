@@ -1,0 +1,153 @@
+# Eval cases for the Ask agent. Every check here is done by code (jobfinder/evals.py).
+#
+#   filters:        the agent's last search must include these (search_jobs' names and values)
+#   not_filters:    no search may use these: catches filters nobody asked for (profile leaks)
+#   picks_match:    every job it shows must match `filters`, checked in the database
+#   states_total:   the answer must contain the true number of matching jobs
+#   no_jobs:        the answer must show no jobs
+# Every case also checks: answered in English, and no internal parameter names in the answer.
+#
+# Most come from the hand cross-check of 2026-10-24; the comment says what went wrong then.
+
+- id: remote
+  question: completely remote
+  filters: {remote_only: true}
+  not_filters: [min_pay_lpa, employment_types, levels]
+  picks_match: true
+  states_total: true            # showed 3 of 448, never said how many
+
+- id: remote-plain
+  question: remote jobs
+  filters: {remote_only: true}
+  not_filters: [min_pay_lpa, employment_types]
+  picks_match: true
+  states_total: true
+
+- id: pune
+  question: jobs in Pune
+  filters: {cities: [Pune]}
+  not_filters: [min_pay_lpa, employment_types, levels]
+  picks_match: true
+  states_total: true
+
+- id: backend-bangalore
+  question: backend jobs in Bangalore
+  filters: {roles: [Backend], cities: [Bengaluru]}
+  not_filters: [min_pay_lpa]
+  picks_match: true
+  states_total: true
+
+- id: devops
+  question: devops
+  filters: {roles: [DevOps / SRE]}
+  not_filters: [min_pay_lpa, employment_types]
+  picks_match: true
+  states_total: true
+
+- id: entry-devops
+  question: entry level DevOps jobs
+  filters: {levels: [Entry], roles: [DevOps / SRE]}
+  not_filters: [min_pay_lpa, employment_types]
+  picks_match: true
+  states_total: true
+
+- id: pay-20-bangalore
+  question: jobs paying at least 20 LPA in Bengaluru
+  filters: {min_pay_lpa: 20, cities: [Bengaluru]}
+  picks_match: true
+  states_total: true
+
+- id: my-minimum
+  question: entry level jobs above my minimum pay
+  filters: {levels: [Entry], min_pay_lpa: 12}
+  not_filters: [employment_types]   # swapped Entry for the profile's "internship"
+  picks_match: true
+  states_total: true
+
+- id: kubernetes
+  question: jobs that mention Kubernetes
+  filters: {description_words: kubernetes}
+  not_filters: [min_pay_lpa, levels]
+  picks_match: true
+  states_total: true
+
+- id: rust-or-go
+  question: jobs that mention Rust or Golang
+  filters: {description_any: [golang, rust]}   # once turned "or" into "and"
+  not_filters: [min_pay_lpa]
+  picks_match: true
+  states_total: true
+
+- id: ml-internships
+  question: machine learning internships
+  filters: {roles: [ML / AI], employment_types: [Internship]}
+  not_filters: [min_pay_lpa, posted_within_days]   # invented both, showed 1 of 76
+  picks_match: true
+  states_total: true
+
+- id: fresher-chennai
+  question: fresher jobs in Chennai
+  filters: {levels: [Entry], cities: [Chennai]}
+  not_filters: [min_pay_lpa]
+  picks_match: true
+  states_total: true
+
+- id: count-mumbai
+  question: how many jobs are there in Mumbai?
+  filters: {cities: [Mumbai]}
+  not_filters: [min_pay_lpa, levels]
+  states_total: true
+
+- id: data-analyst-delhi
+  question: data analyst jobs in Delhi
+  filters: {roles: [Data Analyst], cities: [Delhi NCR]}
+  picks_match: true
+  states_total: true
+
+- id: remote-internships
+  question: remote internships
+  filters: {remote_only: true, employment_types: [Internship]}
+  not_filters: [min_pay_lpa]
+  picks_match: true
+  states_total: true
+
+- id: sales-mumbai
+  question: sales jobs in Mumbai
+  filters: {roles: [Sales / Marketing], cities: [Mumbai], tech_only: false}
+  picks_match: true
+  states_total: true
+
+- id: lakh-a-month
+  question: jobs paying at least 1 lakh a month
+  filters: {min_pay_lpa: 12}
+  picks_match: true
+  states_total: true
+
+- id: stipend-20k
+  question: internships paying at least 20000 rupees a month
+  filters: {employment_types: [Internship], min_pay_lpa: 2.4}
+  picks_match: true
+  states_total: true
+
+- id: amazon-hyderabad
+  question: Amazon jobs in Hyderabad
+  filters: {title_words: amazon, cities: [Hyderabad]}
+  not_filters: [min_pay_lpa]
+  picks_match: true
+  states_total: true
+
+- id: shortlisted
+  question: jobs I have shortlisted
+  filters: {statuses: [saved]}
+  no_jobs: true
+
+- id: atlantis
+  question: show me jobs in Atlantis
+  no_jobs: true                 # once answered in Spanish
+
+- id: last-week
+  question: jobs posted in the last 7 days
+  filters: {posted_within_days: 7}
+  not_filters: [min_pay_lpa, levels]
+  picks_match: true
+  states_total: true

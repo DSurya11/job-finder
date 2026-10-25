@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { EASE, NumberTicker } from "./fx";
+import { PAY_KEY, TONE } from "./ui";
 import { emptyFilters, fetchPayFloors, savePayFloors, type Facet, type Facets, type Filters, type PayFloors } from "./api";
 
 /** A top-bar button that opens a small panel beneath it. */
@@ -219,6 +220,12 @@ export default function FilterBar({ facets, filters, onChange, onPaySaved }: {
       </Menu>
       <Menu label="Pay" count={payCount}>
         <PayFloor onSaved={onPaySaved} />
+        <div className="mb-1 border-b border-rule px-1 pb-2">
+          <div className="label mb-1">Pay colours</div>
+          {PAY_KEY.map(([tone, label]) => (
+            <div key={tone} className={`num text-[11.5px] leading-[1.6] ${TONE[tone]}`}>₹ {label}</div>
+          ))}
+        </div>
         <Check label="Hide low-pay, unpaid and fake" on={filters.hide_bad} onChange={(v) => set("hide_bad", v)} />
         <Steps title="Low end of pay at least (LPA)" steps={[null, 6, 9, 12, 15, 20, 30]} value={filters.salary_min}
           onChange={(v) => set("salary_min", v)} label={(v) => (v == null ? "Any" : `${v}`)} />

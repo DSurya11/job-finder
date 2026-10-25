@@ -8,3 +8,4 @@ playwright
 python-dotenv
 pytest
 openai
+mcp

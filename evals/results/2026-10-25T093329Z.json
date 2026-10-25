@@ -1,0 +1,109 @@
+{
+ "time": "2026-10-25T09:33:29Z",
+ "runs": [
+  {
+   "case": "ml-internships",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-120b",
+   "tokens": 5992,
+   "seconds": 3.21,
+   "answer": "26 machine learning internships are available. Top picks: Tower Research – Intern AI/ML (Delhi NCR) with 15‑36 LPA (rough guess from company pay tier); SkillsCapital – Software Engineer Intern (AI/ML) (India) 3.8‑7 LPA (India‑wide average); OSWAR teck – Software & AI Engineering intern (Jaipur) 6.8‑11.9 LPA (India‑wide average); Discover Dollar Inc – AI Engineer Intern (Bengaluru) 2.4‑4.9 LPA (India‑wide average); Tower Research Capital – Intern AI/ML (Delhi NCR) 2.2‑3.7 LPA (India‑wide average).\n\n56 jobs match without the description filter (\"machine learning\", \"ml\"); the 26 above also mention those words.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "ml-internships",
+   "attempt": 2,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5389,
+   "seconds": 4.8,
+   "answer": "There are 16 machine‑learning internship listings in your database. The top matches (by fit score) are:\n1. Tower Research – Intern – AI/ML (Delhi NCR) – pay 15‑36 LPA (company tier estimate)\n2. SkillsCapital – Software Engineer Intern (AI/ML & Agentic AI) – pay 3.8‑7 LPA (India‑wide average)\n3. Tower Research Capital – Intern – AI/ML – pay 2.2‑3.7 LPA (India‑wide average)\n4. Electronic Arts – AI Full Stack Intern – pay 6.8‑11.9 LPA (India‑wide average)\n5. Sprinto – AI Implementation Intern – pay 6.8‑11.9 LPA (India‑wide average)\n6. Lexsi Labs – AI Research Internship – pay 6.8‑11.9 LPA (India‑wide average)\n7. GRADTWIN SERVICES – Machine Learning – pay not stated\n8. HUEWINE – Software & AI Engineer Intern – pay 6.8‑11.9 LPA (India‑wide average)\n9. MJC GLOBALTECH – AI Engineer Internship – pay 6.8‑11.9 LPA (India‑wide average)\n10. LearnDepth Academy – Machine Learning Instructor – pay 6.8‑11.9 LPA (India‑wide average)\n\nAll figures are either company‑tier estimates or India‑wide averages; none are company‑specific salaries.\n\n\n56 jobs match without the description filter (\"machine learning\"); the 16 above also mention those words.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "ml-internships",
+   "attempt": 3,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5477,
+   "seconds": 4.7,
+   "answer": "There are 16 machine‑learning internship listings in the database. The top picks (sorted by fit) are:\n1. Tower Research – Intern – AI/ML (Delhi NCR) – 15‑36 LPA (stated)\n2. SkillsCapital – Software Engineer Intern (AI/ML & Agentic AI) – 3.8‑7 LPA (India‑wide average)\n3. Tower Research Capital – Intern – AI/ML – 2.2‑3.7 LPA (India‑wide average)\n4. Electronic Arts – AI Full Stack Intern – 6.8‑11.9 LPA (India‑wide average)\n5. Sprinto – AI Implementation Intern – 6.8‑11.9 LPA (India‑wide average)\n6. Lexsi Labs – AI Research Internship – 6.8‑11.9 LPA (India‑wide average)\n7. GRADTWIN SERVICES – Machine Learning Intern – pay not stated\n8. HUEWINE – Software & AI Engineer Intern – 6.8‑11.9 LPA (India‑wide average)\n9. MJC GLOBALTECH – AI Engineer Internship – 6.8‑11.9 LPA (India‑wide average)\n10. LearnDepth Academy – Machine Learning Instructor – 6.8‑11.9 LPA (India‑wide average)\n\n(See the table for full details.)\n\n56 jobs match without the description filter (\"machine learning\"); the 16 above also mention those words.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  }
+ ],
+ "scored": 3,
+ "not_scored": 0,
+ "passed": 3,
+ "by_check": {
+  "english": [
+   3,
+   3
+  ],
+  "filters": [
+   3,
+   3
+  ],
+  "no_internal_names": [
+   3,
+   3
+  ],
+  "not_filters": [
+   3,
+   3
+  ],
+  "picks_match": [
+   3,
+   3
+  ],
+  "states_total": [
+   3,
+   3
+  ]
+ },
+ "by_case": {
+  "ml-internships": [
+   3,
+   3
+  ]
+ },
+ "by_model": {
+  "openai/gpt-oss-120b": [
+   1,
+   1
+  ],
+  "openai/gpt-oss-20b": [
+   2,
+   2
+  ]
+ },
+ "avg_tokens": 5619,
+ "avg_seconds": 4.2
+}
