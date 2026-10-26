@@ -44,5 +44,6 @@ async def fetch_servicenow(client, name="ServiceNow", base_url="https://careers.
         logger.info("[ServiceNow] fetched %d jobs via sitemap", len(jobs))
         return jobs
     except Exception as exc:
+        # Raised, not swallowed: the pipeline marks the company failed instead of "listed nothing".
         logger.error("[ServiceNow] error fetching sitemap: %s", exc)
-        return []
+        raise

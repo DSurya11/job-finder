@@ -61,8 +61,10 @@ def fetch_gs_jobs(name: str) -> list[dict]:
                 resp.raise_for_status()
                 data = resp.json()
             except Exception as e:
+                # Raised, not a break: the pages already read are not the whole list, and an "ok"
+                # run closes every job it did not see, so a failed page 3 closed open roles.
                 logger.error(f"[Goldman Sachs] Error fetching page {page}: {e}")
-                break
+                raise
                 
             items = data.get('data', {}).get('roleSearch', {}).get('items', [])
             if not items:

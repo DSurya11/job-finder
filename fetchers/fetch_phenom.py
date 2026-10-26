@@ -21,9 +21,7 @@ async def fetch_phenom(client: httpx.AsyncClient, company_name: str, domain: str
     jobs = []
     try:
         res = await client.post(url, json=payload, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
-        if res.status_code != 200:
-            print(f"[{company_name}] Phenom returned {res.status_code}")
-            return jobs
+        res.raise_for_status()
             
         data = res.json()
         search_data = data.get("refineSearch", {}).get("data", {}).get("jobs", [])
@@ -49,6 +47,8 @@ async def fetch_phenom(client: httpx.AsyncClient, company_name: str, domain: str
                 "date_fetched": datetime.now(timezone.utc).isoformat()
             })
     except Exception as e:
+        # Raised, not swallowed: the pipeline marks the company failed instead of "listed nothing".
         print(f"[{company_name}] Error fetching Phenom: {e}")
-        
+        raise
+
     return jobs
