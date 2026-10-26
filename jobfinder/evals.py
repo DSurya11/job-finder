@@ -99,12 +99,18 @@ def check_run(conn: sqlite3.Connection, case: dict, result: agent.Result) -> dic
     return checks
 
 
-def evaluate(cases: list[dict], repeat: int = 3, pause: float = 3.0) -> dict:
+def evaluate(cases: list[dict], repeat: int = 3, pause: float = 3.0, impl: str = "ours") -> dict:
+    """impl "langgraph" runs the same cases through agent_lg (Part 9's comparison)."""
+    if impl == "langgraph":
+        from . import agent_lg
+        ask = agent_lg.ask
+    else:
+        ask = agent.ask
     conn = db.connect()
     runs = []
     for case in cases:
         for attempt in range(1, repeat + 1):
-            result = agent.ask(case["question"], conn=conn, source="eval", cache=False)
+            result = ask(case["question"], conn=conn, source="eval", cache=False)
             models = [s["model"] for s in result.steps if s["kind"] == "model"]
             run = {"case": case["id"], "attempt": attempt, "stopped": result.stopped,
                    "model": models[-1] if models else None, "tokens": result.tokens_in + result.tokens_out,
@@ -122,7 +128,9 @@ def evaluate(cases: list[dict], repeat: int = 3, pause: float = 3.0) -> dict:
                   f" {result.seconds:5.1f}s  {' '.join(failed)}", flush=True)
             time.sleep(pause)
     conn.close()
-    return summarize(runs)
+    report = summarize(runs)
+    report["impl"] = impl
+    return report
 
 
 def _rate(passed: int, total: int) -> str:
@@ -152,13 +160,17 @@ def summarize(runs: list[dict]) -> dict:
 
 def save(report: dict) -> Path:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    path = RESULTS_DIR / f"{report['time'].replace(':', '')}.json"
+    suffix = "" if report.get("impl", "ours") == "ours" else f"-{report['impl']}"
+    path = RESULTS_DIR / f"{report['time'].replace(':', '')}{suffix}.json"
     path.write_text(json.dumps(report, indent=1, ensure_ascii=False), encoding="utf-8")
     return path
 
 
 def previous(before: Path) -> dict | None:
-    older = sorted(p for p in RESULTS_DIR.glob("*.json") if p.name < before.name)
+    # The latest earlier run of the same implementation: ours and LangGraph's are not compared here.
+    langgraph = before.stem.endswith("-langgraph")
+    older = sorted(p for p in RESULTS_DIR.glob("*.json")
+                   if p.name < before.name and p.stem.endswith("-langgraph") == langgraph)
     return json.loads(older[-1].read_text(encoding="utf-8")) if older else None
 
 

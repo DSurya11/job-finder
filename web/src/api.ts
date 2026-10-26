@@ -172,3 +172,30 @@ export async function fetchAskMatches(search: Record<string, unknown>, exclude: 
   if (!res.ok) throw new Error(typeof body.detail === "string" ? body.detail : `${res.status} ${res.statusText}`);
   return body as { total: number; page: number; size: number; jobs: Job[] };
 }
+
+// ---- Deep dive: one job researched before applying; every item quotes its source.
+export type DeepDiveItem = { text: string; source: string; quote: string };
+export type DeepDive = {
+  created_at: string;
+  report: { strengths: DeepDiveItem[]; gaps: DeepDiveItem[]; bullets: DeepDiveItem[]; company: DeepDiveItem[];
+            message: string; message_unverified?: string[] };
+  dropped: { section: string; text: string; quote: string; reason: string }[];
+  pages: { id: string; url: string }[];
+  models: string[];
+  seconds: number;
+  tokens: number;
+};
+export type DeepDiveState = { running: boolean; error: string | null; deepdive: DeepDive | null };
+export const fetchDeepDive = (id: string) => json<DeepDiveState>(`/api/jobs/${id}/deepdive`);
+export const startDeepDive = (id: string) => json<{ started: boolean }>(`/api/jobs/${id}/deepdive`, { method: "POST" });
+
+// ---- Coverage repair: boards the agent proposed for broken sources, proved by code, applied on approval.
+export type FixProposal = {
+  id: number; company: string; created_at: string; status: string; last_fetch: string;
+  current: Record<string, string>; proposed: Record<string, string>;
+  india_jobs: number; total_jobs: number; sample_titles: string[]; evidence: string;
+};
+export const fetchFixes = () => json<{ fixes: FixProposal[] }>("/api/fixes");
+export const decideFix = (id: number, decision: "approve" | "reject") =>
+  json<{ status: string }>(`/api/fixes/${id}/${decision}`, { method: "POST" });
+

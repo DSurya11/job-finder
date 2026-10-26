@@ -84,6 +84,26 @@ CREATE TABLE IF NOT EXISTS agent_runs (
     total_matching INTEGER, search TEXT, steps TEXT, models TEXT,
     tokens_in INTEGER, tokens_out INTEGER, seconds REAL
 );
+
+-- Every deep dive on a job: the checked report, what code dropped from it and why, the pages read.
+CREATE TABLE IF NOT EXISTS deep_dives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id TEXT, created_at TEXT, stopped TEXT,
+    report TEXT, dropped TEXT, pages TEXT, steps TEXT, models TEXT,
+    tokens_in INTEGER, tokens_out INTEGER, seconds REAL
+);
+CREATE INDEX IF NOT EXISTS deep_dives_job ON deep_dives (job_id, id);
+
+-- Coverage repair: a board the agent proposes for a broken company, proved by code (India jobs
+-- counted), applied to companies.yaml only when the user approves it.
+CREATE TABLE IF NOT EXISTS fix_proposals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company TEXT, created_at TEXT, decided_at TEXT,
+    status TEXT,                 -- pending | approved | rejected | rejected_by_check | no_fix
+    last_fetch TEXT, current TEXT, proposed TEXT,
+    india_jobs INTEGER, total_jobs INTEGER, sample_titles TEXT, evidence TEXT,
+    steps TEXT, tokens INTEGER
+);
 """
 
 # Added after the first release; created on connect if an older database lacks them.
@@ -159,6 +179,10 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
         refresh_groups(conn)
         conn.commit()
     conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_grp ON jobs(is_active, grp)")
+    # The UPDATE above opens a transaction; left open it held the write lock for the life of the
+    # connection. A deep dive keeps its connection for minutes, and every other process (the
+    # app, the 07:00 fetch) then failed with "database is locked".
+    conn.commit()
     _READY.add(str(path))
     return conn
 

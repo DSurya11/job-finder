@@ -1,0 +1,11 @@
+# After the 07:00 fetch, so it sees today's results. Missed runs happen at the next boot.
+[Unit]
+Description=Job Finder: daily source repair at 08:00
+
+[Timer]
+OnCalendar=*-*-* 08:00:00
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

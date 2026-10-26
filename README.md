@@ -41,6 +41,17 @@ Motion comes from open component libraries (Magic UI's number ticker and blur fa
 
 Keyboard: `j` / `k` move, `o` opens the posting, `s` shortlists, `a` marks applied, `x` dismisses, `c` selects for the Claude prompt, `/` searches, `?` lists these.
 
+## The agents
+
+Four places where a model decides the steps, and code checks what it returns. They run on free models through a local OmniRoute router (`agentic-omniroute`; its key goes in `.env`, see `.env.example`); nothing is ever sent or applied on your behalf.
+
+- **Ask** (the Ask box, `python -m jobfinder ask "..."`): searches your jobs with read-only tools and answers in plain text. Code checks that every job it names came from a tool in that run, and the true match count is printed under the answer. `jobfinder/agent.py`, `agent_tools.py`.
+- **Deep dive** ("Research this job" in a job card, `python -m jobfinder deepdive <job_id>`): reads the posting, your profile, your resume PDF (`resume_path` in `user_profile.yaml`; your name, email, phone and links are removed first) and up to 3 pages of the company's own site. It returns why you fit, what is missing, resume bullets for this job, facts about the company and a referral draft. Every item carries a quote, and code keeps it only if the quote is really in its source; pay talk is dropped. Names and numbers in the draft that no source has are listed under "Check before sending". About 1 to 3 minutes. `jobfinder/deepdive.py`.
+- **Coverage repair** (daily at 08:00, `python -m jobfinder repair`): for companies whose fetch failed, came back empty or is manual, it looks for their current job board (links on the careers page, the company's name on the common boards) and proposes a change to `companies.yaml`. Code probes the board itself; with no India jobs the proposal is rejected. Proposals wait in **Coverage → Proposed fixes** (or `python -m jobfinder fixes`) until you press Approve, which is the only thing that writes `companies.yaml`. A company with no fix is not tried again for 7 days. `jobfinder/repair.py`.
+- **MCP server** for GitHub Copilot and other MCP clients: the Ask tools, read-only. `jobfinder/mcp_server.py`, `.vscode/mcp.json`.
+
+`python -m jobfinder eval` runs the Ask agent against the cases in `evals/ask_cases.yaml` and scores every run; `--impl langgraph` runs the same cases on `jobfinder/agent_lg.py`, the same agent built on LangGraph, for comparison (`pip install -r requirements-langgraph.txt` first).
+
 ## Pay checks
 
 Every job gets a pay verdict against the floors in `user_profile.yaml` (`min_lpa: 12`, `target_lpa: 18`; an internship's stipend is annualised and held to the same floor, so 1,00,000 a month, unless you set `min_stipend_per_month`):
@@ -150,7 +161,12 @@ Edit the entry in `companies.yaml` to change `keywords`, `max_pages` or `posted_
 | `python -m jobfinder pay --limit 300` | Look up pay on AmbitionBox for jobs that do not state it |
 | `python -m jobfinder rescore` | Re-score stored jobs after a profile change |
 | `python -m jobfinder health` | Print companies whose last fetch looks wrong |
-| `python -m pytest tests` | Run the parser tests |
+| `python -m jobfinder ask "DevOps jobs in Pune"` | Ask the agent; `runs` lists past runs, `runs --show ID` one in full |
+| `python -m jobfinder deepdive <job_id>` | Research one job before applying |
+| `python -m jobfinder repair` | Look for new job boards of broken sources (`--company NAME`, `--limit N`) |
+| `python -m jobfinder fixes` | Proposed fixes; `--approve ID` or `--reject ID` |
+| `python -m jobfinder eval` | Score the Ask agent on the eval cases (`--impl langgraph`, `--only a,b`, `--repeat 3`) |
+| `python -m pytest tests` | Run the tests |
 
 ## Layout
 
@@ -168,6 +184,11 @@ jobfinder/
   discover.py   find a company's job board
   server.py     API for the web app
   db.py         SQLite store (data/jobs.db)
+  agent.py      the Ask agent's loop; agent_tools.py its tools; agent_lg.py the LangGraph version
+  deepdive.py   research one job; resume.py the resume text it reads
+  repair.py     coverage repair agent and its approval step
+  evals.py      eval runner for the Ask agent
+  mcp_server.py the Ask tools over MCP
 fetchers/       company-specific scrapers (Amazon, Goldman Sachs, Swiggy, …)
 web/            React app (Vite, Tailwind, Motion)
 ```
