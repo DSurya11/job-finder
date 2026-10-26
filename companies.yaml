@@ -79,7 +79,8 @@ companies:
   careers_url: null
   enabled: true
 - name: ServiceNow
-  ats: servicenow
+  ats: smartrecruiters
+  slug: servicenow
   careers_url: https://careers.servicenow.com
   enabled: true
 - name: Swiggy
