@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 
 
@@ -35,11 +36,21 @@ def main() -> None:
     runs = sub.add_parser("runs", help="list recent Ask runs, or show one with --show ID")
     runs.add_argument("--show", type=int, default=None)
     runs.add_argument("--limit", type=int, default=20)
+    rep_ = sub.add_parser("repair", help="investigate broken job sources and propose fixes (you approve)")
+    rep_.add_argument("--limit", type=int, default=None, help="most companies this run")
+    rep_.add_argument("--company", help="only this company")
+    fixes = sub.add_parser("fixes", help="list proposed source fixes, or approve / reject one")
+    fixes.add_argument("--approve", type=int, metavar="ID")
+    fixes.add_argument("--reject", type=int, metavar="ID")
+    dive = sub.add_parser("deepdive", help="research one job: fit with quoted sources, gaps, resume bullets")
+    dive.add_argument("job_id")
     sub.add_parser("mcp", help="serve the read-only job tools over MCP (stdio) for VS Code, Claude Desktop, ...")
     ev = sub.add_parser("eval", help="run the Ask agent on evals/ask_cases.yaml and check its answers")
     ev.add_argument("--repeat", type=int, default=3, help="runs per case: the model varies")
     ev.add_argument("--only", help="comma-separated case ids")
     ev.add_argument("--pause", type=float, default=3.0, help="seconds between runs (free-tier limits)")
+    ev.add_argument("--impl", choices=["ours", "langgraph"], default="ours",
+                    help="which agent loop: ours (agent.py) or LangGraph's (agent_lg.py, Part 9)")
 
     args = ap.parse_args()
     logging.basicConfig(
@@ -72,6 +83,26 @@ def main() -> None:
         from . import agent
         steps = args.max_steps or agent.MAX_STEPS
         agent.print_result(agent.ask(args.question, max_steps=steps))
+    elif args.cmd == "repair":
+        from . import repair
+        for o in repair.run(limit=args.limit or repair.MAX_COMPANIES, only=args.company):
+            print(f"{o.company:28} {o.result:18} {o.note[:90]}")
+        print("\nReview with: python -m jobfinder fixes")
+    elif args.cmd == "fixes":
+        from . import db, repair
+        conn = db.connect()
+        if args.approve or args.reject:
+            print(repair.decide(conn, args.approve or args.reject, approve=bool(args.approve)))
+        else:
+            for p in repair.proposals(conn):
+                print(f"{p['id']:4d}  {p['created_at'][:16]}  {p['status']:17} {p['company']:24} "
+                      f"{json.dumps(p['proposed'])[:60]:60} india={p['india_jobs']}  {(p['evidence'] or '')[:60]}")
+    elif args.cmd == "deepdive":
+        from . import deepdive
+        report = deepdive.research(args.job_id)
+        print(json.dumps({"stopped": report.stopped, "report": report.report, "dropped": report.dropped,
+                          "pages": report.pages, "tokens": report.tokens_in + report.tokens_out,
+                          "seconds": report.seconds}, indent=2, ensure_ascii=False))
     elif args.cmd == "mcp":
         from . import mcp_server
         mcp_server.main()
@@ -79,12 +110,11 @@ def main() -> None:
         from . import evals
         cases = evals.load_cases(args.only.split(",") if args.only else None)
         print(f"{len(cases)} cases x {args.repeat} runs, OmniRoute cache bypassed")
-        report = evals.evaluate(cases, repeat=args.repeat, pause=args.pause)
+        report = evals.evaluate(cases, repeat=args.repeat, pause=args.pause, impl=args.impl)
         path = evals.save(report)
         evals.print_report(report, evals.previous(path))
         print(f"\nsaved {path.relative_to(evals.ROOT)}")
     elif args.cmd == "runs":
-        import json
         from . import agent, db
         conn = db.connect()
         if args.show is not None:

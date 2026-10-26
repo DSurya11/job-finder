@@ -1,0 +1,4 @@
+# Only for Part 9's comparison (jobfinder/agent_lg.py, `jobfinder eval --impl langgraph`).
+# The app itself does not need these.
+langgraph==1.2.17
+langchain-openai==1.7.2

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import DeepDive from "./DeepDive";
 import { SPRING } from "./fx";
 import { item, stagger } from "./Inspector";
 import Description from "./Description";
@@ -125,6 +126,7 @@ export default function Detail({ id, status: listed, picked, onPick, onClose, on
           ) : (
             <motion.p variants={item} className="text-[15px] text-soft">This source does not include the description. Open the posting to read it.</motion.p>
           )}
+          <motion.div variants={item}><DeepDive jobId={job.id} /></motion.div>
         </div>
         <aside className="order-1 lg:sticky lg:top-0 lg:order-2 lg:self-start">
           <motion.dl variants={item} className="border-t border-rule">

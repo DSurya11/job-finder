@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import threading
 from pathlib import Path
 
@@ -13,8 +14,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import agent, agent_tools, db, pipeline, queries, score
+from . import agent, agent_tools, db, deepdive, pipeline, queries, repair, score
 from .pay import floors as pay_floors
+
+logger = logging.getLogger("jobfinder.server")
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 STATUSES = {"saved", "applied", "interview", "offer", "rejected", "hidden"}
@@ -343,6 +346,80 @@ def ask_jobs(body: AskIn):
             "total_matching": result.total_matching, "search": result.search,
             "tokens_in": result.tokens_in, "tokens_out": result.tokens_out,
             "seconds": result.seconds, "jobs": jobs}
+
+
+# Deep dives run in the background: a live one took 166 s while rate limits moved it across
+# four models, too long to hold a request open. The page starts one, then checks back.
+DEEP_DIVES: dict[str, dict] = {}       # job id -> {"running": bool, "error": str | None}
+
+
+@app.get("/api/jobs/{job_id}/deepdive")
+def get_deep_dive(job_id: str):
+    """The newest report for the job (or null), and whether a new one is being written."""
+    state = DEEP_DIVES.get(job_id, {})
+    conn = db.connect()
+    try:
+        return {"running": bool(state.get("running")), "error": state.get("error"),
+                "deepdive": deepdive.latest(conn, job_id)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/jobs/{job_id}/deepdive")
+def run_deep_dive(job_id: str):
+    """Start researching the job; the model writes, code keeps only what its sources show."""
+    if DEEP_DIVES.get(job_id, {}).get("running"):
+        return {"started": False}
+    conn = db.connect()
+    try:
+        if not conn.execute("SELECT 1 FROM jobs WHERE id = ?", (job_id,)).fetchone():
+            raise HTTPException(404, "no such job")
+    finally:
+        conn.close()
+    DEEP_DIVES[job_id] = {"running": True, "error": None}
+    threading.Thread(target=_deep_dive_in_background, args=(job_id,), name=f"deepdive-{job_id}",
+                     daemon=True).start()
+    return {"started": True}
+
+
+def _deep_dive_in_background(job_id: str) -> None:
+    error = None
+    try:
+        report = deepdive.research(job_id)
+        if report.stopped != "answered":
+            limited = any(s.get("rate_limited") for s in report.steps if s["kind"] == "error")
+            error = ("The free model providers are rate-limiting right now; try again in a minute." if limited
+                     else f"The research stopped early ({report.stopped.replace('_', ' ')}). Try again.")
+    except Exception as exc:               # noqa: BLE001 - shown to the user, not swallowed
+        logger.exception("deep dive failed")
+        error = f"The research failed: {exc}"
+    DEEP_DIVES[job_id] = {"running": False, "error": error}
+
+
+@app.get("/api/fixes")
+def list_fixes():
+    """Coverage repair proposals, newest first; pending ones wait for the user."""
+    conn = db.connect()
+    try:
+        return {"fixes": repair.proposals(conn)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/fixes/{proposal_id}/{decision}")
+def decide_fix(proposal_id: int, decision: str):
+    """approve: write the board into companies.yaml and fetch that company; reject: mark it."""
+    if decision not in ("approve", "reject"):
+        raise HTTPException(404, "approve or reject")
+    conn = db.connect()
+    try:
+        return repair.decide(conn, proposal_id, approve=decision == "approve")
+    except LookupError as error:
+        raise HTTPException(404, str(error))
+    except ValueError as error:
+        raise HTTPException(409, str(error))
+    finally:
+        conn.close()
 
 
 class MatchesIn(BaseModel):

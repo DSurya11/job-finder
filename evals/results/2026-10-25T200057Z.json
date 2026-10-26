@@ -1,0 +1,552 @@
+{
+ "time": "2026-10-25T20:00:57Z",
+ "runs": [
+  {
+   "case": "remote",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 6263,
+   "seconds": 11.64,
+   "answer": "There are 189 remote listings, but only 12 are fully remote (no hybrid or in‑office requirement). The best matches are: Atlassian Product Security Engineer, Confluent Staff SRE, Coinbase Machine Learning Engineer, Twilio ML Engineer, SleekCare Full‑Stack Internship, Visa Data Scientist, Roblox Developer Engagement (3 roles), Twilio Staff Software Engineer, Twilio Principal Engineer, and Apna Hindi AI Voice Data Collection. These jobs meet your “completely remote” preference and span a range of pay and experience levels.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "remote-plain",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5475,
+   "seconds": 10.96,
+   "answer": "There are 189 remote jobs in total. Here are the top 20 matches: Cloudflare – Systems Engineer (Data Intelligence & Analytics Team); Together AI – AI Infrastructure System Engineer; Cloudflare – Software Engineer – Platforms & Productivity; GitLab – People Systems Engineer; Together AI – Staff Engineer, Distributed Storage and HPC & AI Infrastructure; OpenAI – Applied AI Engineer; Atlassian – Product Security Engineer; Confluent – Staff Software Engineer I – SRE; Coinbase – Machine Learning Engineer; Twilio – Machine Learning Engineer (L3); SleekCare Private Limited – Full Stack Development (Internship); Cloudflare – Software Engineer; Visa – Data Scientist – Visa Consulting & Analytics; Notion – Forward Deployed Engineer, India; Roblox – Developer Engagement Representative – ANZ; Roblox – Developer Engagement Representative – LATAM; Roblox – Global Developer Engagement Representative; Twilio – Staff Software Engineer (L4); Twilio – Principal Engineer (L5).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "pune",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5611,
+   "seconds": 11.11,
+   "answer": "1071 jobs match in Pune. Here are the top 20:\n1. Autodesk – Software Development Engineer [PSET-Product Data-Data Foundation]\n2. Barclays – GTSM – Site Reliability Engineer\n3. Barclays – BA4-Infrastructure Engineer\n4. Barclays – DevOps Engineer\n5. Amazon – Software Development Engineer – Test II, Alexa Endpoint Experiences\n6. Barclays – Infrastructure Design Engineer (AVP)\n7. Deutsche Bank – Python Developer, AVP\n8. FIS – Site Reliability Engineer (SRE) – Cloud Platform\n9. Mastercard – Data Scientist I\n10. Barclays – AI Engineer\n11. Barclays – AVP – Data Scientist & AI Engineer\n12. Barclays – Software Engineer\n13. Bosch – AI/ML Expert\n14. Mastercard – AI Engineer\n15. Maersk – IGA Cyber Engineer (Saviynt IGA)\n16. Barclays – Platform Engineering\n17. Citi – Java and Python Developer\n18. Barclays – Infrastructure Engineer-Network operations\n19. Mastercard – Software Engineer II\n20. Deutsche Bank – Technical specialist- Data Engineer (L3), AS",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "backend-bangalore",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "tokens": 6617,
+   "seconds": 29.77,
+   "answer": "152 backend jobs in Bangalore. Top matches include GitLab (Intermediate & Staff roles, 32-54 LPA), GE Vernova (Mid, 14.5-20 LPA), Deutsche Bank (AVP, 15-26 LPA), Wissen Technology (Entry Python, 11-16 LPA), and Precisely (Entry Java/Go, 11-19 LPA). Pay figures are estimates from AmbitionBox or India-wide averages.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "devops",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5684,
+   "seconds": 10.92,
+   "answer": "There are 565 DevOps / SRE jobs in the database. Here are the top 20 matches sorted by fit score:\n1. Razorpay – DevOps Engineer (Bengaluru)\n2. Cisco – Site Reliability Engineer (Bengaluru)\n3. Okta – Site Reliability Engineer (Bengaluru)\n4. Barclays – GTSM – Site Reliability Engineer (Pune)\n5. Salesforce – Software Engineering PMTS (Hyderabad)\n6. Smallest AI – DevOps Engineer (Bengaluru)\n7. Sarvam AI – DevOps Engineer (Bengaluru)\n8. Deutsche Bank – Cloud Engineer, AVP (Bengaluru)\n9. Guidewire – Automation Infrastructure Engineer (Bengaluru)\n10. Barclays – BA4-Infrastructure Engineer (Pune)\n11. Barclays – DevOps Engineer (Pune)\n12. Guidewire – Software Engineer II – Cloud Platform (Bengaluru)\n13. FIS – Site Reliability Engineer (Pune)\n14. Motorola Solutions – Software Engineer (Bengaluru)\n15. Akku – Junior DevOps Engineer (Chennai)\n16. Rekruton Global IT Services – DevOps Engineer I & II (Ahmedabad)\n17. PwC – GCP Devops Engineer (Hyderabad)\n18. Apple – Junior Application Support & Site Reliability Engineer (India)\n19. Thomson Reuters – Staff DevOps Engineer (Hyderabad, Bengaluru)\n20. Guidewire – Platform Engineer III (Bengaluru)\n",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "entry-devops",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 3806,
+   "seconds": 10.58,
+   "answer": "Here are 8 entry‑level DevOps roles in India, sorted by fit score. Pay figures are either company‑stated ranges or estimates from industry averages.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "pay-20-bangalore",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5926,
+   "seconds": 11.35,
+   "answer": "There are 2,473 active jobs in Bengaluru that pay at least 20 LPA. Here are the top 20 matches, sorted by fit score: 1) Rubrik – Software Engineer – Cloud: Azure (20‑45 LPA, rough guess). 2) Rubrik – Software Engineer – SaaS O365 (20‑45 LPA, rough guess). 3) Uplers – Full Stack Developer (22‑23 LPA, stated). 4) Amazon – Network Development Engineer (21.6‑27.2 LPA, estimate). 5) Squarepoint – Software Developer – Data Platform (41.3‑65.2 LPA, estimate). 6) Guidewire – Software Engineer II – Cloud Platform (20‑40 LPA, rough guess). 7) Cisco – Software Engineering Technical Leader (24.6‑44 LPA, estimate). 8) Arista Networks – Customer Reliability Engineer (28.1‑52.1 LPA, estimate). 9) Pure Storage – MTS – AI / MLOps (24‑55 LPA, rough guess). 10) Amazon – Network Development Engineer I (21.6‑27.2 LPA, estimate). 11) Cisco – Finance Analyst – Techno‑Functional (24.6‑44 LPA, estimate). 12) MongoDB – Cloud Operations Engineer (32.4‑41.4 LPA, estimate). 13) NVIDIA – GPU Core Pipeline IP Verification Engineer (21.5‑37.6 LPA, estimate). 14) GitLab – Intermediate Backend Engineer (32.4‑53.8 LPA, estimate). 15) Analog Devices – Engineer, Design Evaluation Engineering (23‑29.4 LPA, estimate). 16) Cisco – Software QA Engineer (20.4‑44.5 LPA, estimate). 17) Pure Storage – Cloud Native Technical Services Engineer (45‑60 LPA, estimate). 18) Airbus – Electrical System Engineer (20.2‑25.8 LPA, estimate). 19) Google – Software Engineer, Search (29.1‑49.4 LPA, estimate). 20) Thomson Reuters – Staff DevOps Engineer (35‑65 LPA, rough guess).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "my-minimum",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 7943,
+   "seconds": 19.5,
+   "answer": "There are 116 entry‑level positions that pay at least your minimum of 12 LPA. The top 20, sorted by highest pay, are:\n1. eBay – MTS‑1 Software Engineer – Fullstack (59.5‑65.7 LPA, estimate)\n2. Cisco – Software Engineer Technical Leader – Embedded C (50.1‑55.3 LPA, estimate)\n3. Cisco – Software Engineering Technical Leader – C/C++ (50.1‑55.3 LPA, estimate)\n4. Stripe – Software Engineer, Intern (41‑61.7 LPA, estimate)\n5. Apple – Junior Software Development Engineer in Test (38.5‑52.3 LPA, estimate)\n6. Arcadia – Junior Data Scientist (37‑56 LPA, estimate)\n7. Build & Hire – C# / .NET – Software Engineer (35‑40 LPA, stated)\n8. Graviton Research – Software Engineer (30‑65 LPA, rough guess)\n9. Squarepoint – Junior Quant Researcher – ML Alpha Research (30‑65 LPA, rough guess)\n10. Graviton Research – Quantitative Researcher (30‑65 LPA, rough guess)\n11. Squarepoint – Junior Quant Researcher (30‑65 LPA, rough guess)\n12. Google – Data Engineer, Data Architecture and Engineering (29.2‑46.7 LPA, estimate)\n13. Google – Software Engineer, Search (29.1‑49.4 LPA, estimate)\n14. Google – Software Engineer, Persistent Disk (29.1‑49.4 LPA, estimate)\n15. Google – Software Engineer, PhD, Early Career (29.1‑49.4 LPA, estimate)\n16. Google – Software Engineer, AI/ML, PhD, Early Career (29.1‑49.4 LPA, estimate)\n17. Google – Software Engineer, PhD, Early Career, Networking (29.1‑49.4 LPA, estimate)\n18. Google – Software Engineer, Fleet Analytics, PhD, Early Career (29.1‑49.4 LPA, estimate)\n19. eBay – MTS‑1 Machine Learning Engineer (28.7‑47.8 LPA, estimate)\n20. Google – Technical Program Manager, AI Products (28‑40 LPA, estimate).",
+   "scored": true,
+   "checks": {
+    "filters": false,
+    "not_filters": true,
+    "picks_match": false,
+    "states_total": false,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": false
+  },
+  {
+   "case": "kubernetes",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5593,
+   "seconds": 11.81,
+   "answer": "1249 jobs mention Kubernetes. Here are the top 20 matches: Cisco – Software Engineer; Razorpay – DevOps Engineer; Rubrik – Software Engineer – Cloud: Azure; Airbus – Technology Analyst; Cisco – Software QA Engineer; Rubrik – Software Engineer‑ SaaS O365; Cisco – Site Reliability Engineer (SRE) – Cloud Platform & Kubernetes, Docker; Okta – Site Reliability Engineer; Salesforce – Software Engineering PMTS (Apache, Kafka, Terraform); Smallest AI – DevOps Engineer; Sarvam AI – DevOps Engineer; Deutsche Bank – Cloud Engineer, AVP; Barclays – BA4‑Infrastructure Engineer; Barclays – DevOps Engineer; Squarepoint – Software Developer – Data Platform; Guidewire – Software Engineer II – Cloud Platform; NCR Voyix – Software Engineer (I) – Edge; Barclays – Infrastructure Design Engineer (AVP); IMC Trading – Site Reliablity Engineer.\n\n8013 jobs match without the description filter (\"kubernetes\"); the 1249 above also mention those words.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "rust-or-go",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "tokens": 12799,
+   "seconds": 47.82,
+   "answer": "Found 257 jobs mentioning Rust or Golang. Top 20 include DevOps, SRE, and backend roles at Razorpay, Amazon, Okta, Squarepoint, Cisco, GitLab, and others. Pay ranges from 11–65 LPA (estimates). Remote option at Together AI. Cisco has 3 Golang-specific roles. Entry to Staff+ levels available.\n\n8013 jobs match without the description filter (\"rust\", \"golang\"); the 257 above also mention those words.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "ml-internships",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 4959,
+   "seconds": 10.87,
+   "answer": "Here are 16 machine‑learning internship opportunities in India (including remote). Pay ranges are from the job postings or industry averages; some do not state a figure. The list is sorted by best fit.\n\n\n56 jobs match without the description filter (\"machine learning\"); the 16 above also mention those words.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "fresher-chennai",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 4315,
+   "seconds": 11.07,
+   "answer": "11 fresher jobs match your request in Chennai. The top picks include Amazon’s System Development Engineer I (18‑28 LPA, estimate from AmbitionBox), Arcadia’s Junior Data Scientist (37‑56 LPA, estimate), and KLA’s Applications Engineer (18‑23 LPA, estimate). Other options are Junior DevOps Engineer at Akku (3.1‑4.2 LPA, India‑wide average), Full‑Stack Developer at Golden Opportunities (3.4‑5.3 LPA, India‑wide average), and Junior Developer – AI at Larsen & Toubro (2.9‑4.2 LPA, India‑wide average).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "count-mumbai",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 10213,
+   "seconds": 21.58,
+   "answer": "There are 391 jobs in Mumbai. Here are the top four based on fit score and pay:\n1. Site Reliability Engineer – IMC Trading (35–80 LPA, rough guess from company pay tier).\n2. Applied AI Engineer – OpenAI (47.5–52.5 LPA, estimate from reported salaries).\n3. Quantitative Researcher – WorldQuant (39–70 LPA, estimate from reported salaries).\n4. HPC Operations Engineer – Jump Trading (45–95 LPA, rough guess from company pay tier).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "data-analyst-delhi",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "tokens": 6702,
+   "seconds": 61.71,
+   "answer": "41 data analyst jobs in Delhi NCR. Top matches include Barclays Banking Product Analytics AVP (9.9-18.3 LPA, estimate from AmbitionBox), Barclays Banking Product Analytics VP (28-60 LPA, rough guess), Paytm Product Analyst Telco (15-32 LPA, rough guess), Barclays Transaction Monitoring Analytics VP (28-60 LPA, rough guess), and Citi IT Business Analyst (12-24 LPA, rough guess). 21 more jobs match.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "remote-internships",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5668,
+   "seconds": 6.6,
+   "answer": "36 remote internship positions are listed in your database. Here are the top 20 matches sorted by fit score: 1) Full Stack Development at SleekCare Private Limited, 2) Data Science at QuickHyre, 3) Backend Development at The ProEducator, 4) Software Development at The ProEducator, 5) Software Development at Systalink, 6) Machine Learning Instructor at LearnDepth Academy, 7) Data Aggregation, Software Development & Web Application Testing at Michmer Technologies, 8) SAP DEVELOPER at Raven Infotech, 9) Software Development at TEN, 10) Machine Learning at Simpli Intern, 11) Course Developer (JavaScript) at SelfCode Academy, 12) Course Developer (Spring Boot) at SelfCode Academy, 13) Front End Development at The ProEducator, 14) SAP BTP Cloud Fullstack Developer at Raven Infotech, 15) AI Engineer Assistant at Calyp Innovations Private Limited, 16) Full Stack Development at Bookmywarehouse, 17) Course Developer (Flutter) at SelfCode Academy, 18) Mobile App Development at Nish E-Service OPC Private Limited, 19) Artificial Intelligence (AI) at Unessa Foundation, 20) AI Content Creation at Giant Leap.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "sales-mumbai",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "tokens": 15785,
+   "seconds": 35.04,
+   "answer": "Found 166 sales jobs in Mumbai. Top 20 include roles at Google, Microsoft, Amazon, Meta, CrowdStrike, Okta, Palo Alto Networks, Elastic, Zscaler, Paytm, Cisco, Commvault, and more. Pay ranges from 8.2 LPA (entry-level) to 117 LPA (senior/executive). Most are full-time; a few offer remote flexibility. Experience levels vary from Mid to Manager/Staff+.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "lakh-a-month",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5439,
+   "seconds": 10.87,
+   "answer": "There are 6,272 jobs that pay at least 1 lakh per month (12 LPA). Here are the top 20 matches, sorted by fit score. Pay figures are taken from the job postings or company salary estimates (AmbitionBox or reported tiers).",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "stipend-20k",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 5730,
+   "seconds": 11.7,
+   "answer": "There are 117 internships that pay at least ₹20,000 per month (₹2.4 LPA). Here are the top 20 matches sorted by fit score:",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "amazon-hyderabad",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "ministral-14b-latest",
+   "tokens": 6356,
+   "seconds": 25.82,
+   "answer": "There are 105 Amazon jobs in Hyderabad, with top roles in Software Engineering, Data Analyst, and Data Science at Entry/Mid levels. Pay estimates range from 16.2 LPA to 39.8 LPA (AmbitionBox). Highlights include 5 openings for Data Centre Linux & HW Engineer and high-paying roles like SDE-1 (25–39.8 LPA). See the table below for details.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "shortlisted",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 3116,
+   "seconds": 6.57,
+   "answer": "You currently have no jobs marked as shortlisted. If you want to see all jobs, remove the \"shortlisted\" filter.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "no_jobs": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "atlantis",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "openai/gpt-oss-20b",
+   "tokens": 4653,
+   "seconds": 15.73,
+   "answer": "No jobs were found for the city \"Atlantis\" because it is not a recognized location in our database. You can either search for jobs in a real Indian city (e.g., Bengaluru, Hyderabad, Pune) or look for remote opportunities by setting the remote filter.",
+   "scored": true,
+   "checks": {
+    "no_jobs": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  },
+  {
+   "case": "last-week",
+   "attempt": 1,
+   "stopped": "answered",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "tokens": 6666,
+   "seconds": 41.67,
+   "answer": "23 jobs were posted in the last 7 days (all on 2026-10-24). Most are internships across Full Stack, ML/AI, Data Science, Backend, Frontend, Mobile, and Software Engineering roles. Many are remote/work-from-home. Pay ranges vary: some are stated (e.g., Prepreater AI Solutions Engineer 2.4-15.6 LPA, QuickHyre Data Science 9.6-16.2 LPA), others use India-wide averages, and several don't state pay.",
+   "scored": true,
+   "checks": {
+    "filters": true,
+    "not_filters": true,
+    "picks_match": true,
+    "states_total": true,
+    "english": true,
+    "no_internal_names": true
+   },
+   "passed": true
+  }
+ ],
+ "scored": 22,
+ "not_scored": 0,
+ "passed": 21,
+ "by_check": {
+  "english": [
+   22,
+   22
+  ],
+  "filters": [
+   20,
+   21
+  ],
+  "no_internal_names": [
+   22,
+   22
+  ],
+  "no_jobs": [
+   2,
+   2
+  ],
+  "not_filters": [
+   15,
+   15
+  ],
+  "picks_match": [
+   18,
+   19
+  ],
+  "states_total": [
+   19,
+   20
+  ]
+ },
+ "by_case": {
+  "remote": [
+   1,
+   1
+  ],
+  "remote-plain": [
+   1,
+   1
+  ],
+  "pune": [
+   1,
+   1
+  ],
+  "backend-bangalore": [
+   1,
+   1
+  ],
+  "devops": [
+   1,
+   1
+  ],
+  "entry-devops": [
+   1,
+   1
+  ],
+  "pay-20-bangalore": [
+   1,
+   1
+  ],
+  "my-minimum": [
+   0,
+   1
+  ],
+  "kubernetes": [
+   1,
+   1
+  ],
+  "rust-or-go": [
+   1,
+   1
+  ],
+  "ml-internships": [
+   1,
+   1
+  ],
+  "fresher-chennai": [
+   1,
+   1
+  ],
+  "count-mumbai": [
+   1,
+   1
+  ],
+  "data-analyst-delhi": [
+   1,
+   1
+  ],
+  "remote-internships": [
+   1,
+   1
+  ],
+  "sales-mumbai": [
+   1,
+   1
+  ],
+  "lakh-a-month": [
+   1,
+   1
+  ],
+  "stipend-20k": [
+   1,
+   1
+  ],
+  "amazon-hyderabad": [
+   1,
+   1
+  ],
+  "shortlisted": [
+   1,
+   1
+  ],
+  "atlantis": [
+   1,
+   1
+  ],
+  "last-week": [
+   1,
+   1
+  ]
+ },
+ "by_model": {
+  "openai/gpt-oss-20b": [
+   15,
+   16
+  ],
+  "nvidia/nemotron-3-ultra-550b-a55b:free": [
+   5,
+   5
+  ],
+  "ministral-14b-latest": [
+   1,
+   1
+  ]
+ },
+ "avg_tokens": 6605,
+ "avg_seconds": 19.8,
+ "impl": "ours"
+}

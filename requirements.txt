@@ -9,3 +9,4 @@ python-dotenv
 pytest
 openai
 mcp
+pypdf==5.9.0

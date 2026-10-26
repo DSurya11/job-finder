@@ -1,0 +1,14 @@
+# Coverage repair: investigates job sources that broke in this morning's fetch and proposes
+# fixes. It only proposes; companies.yaml changes when you approve (Coverage view, or
+# `python -m jobfinder fixes --approve ID`). Started by jobfinder-repair.timer.
+[Unit]
+Description=Job Finder: propose fixes for broken job sources
+
+[Service]
+Type=oneshot
+WorkingDirectory=@REPO@
+# After a missed night both timers fire at boot: wait for the fetch, so repair judges today's run.
+ExecStartPre=/bin/sh -c 'while systemctl --user is-active --quiet jobfinder-refresh.service; do sleep 30; done'
+ExecStart=@REPO@/.venv/bin/python -m jobfinder repair
+TimeoutStartSec=30min
+Nice=10
