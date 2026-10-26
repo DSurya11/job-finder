@@ -9,9 +9,7 @@ async def fetch_eightfold(client: httpx.AsyncClient, company_name: str, domain: 
     jobs = []
     try:
         res = await client.get(url, timeout=15)
-        if res.status_code != 200:
-            print(f"[{company_name}] Eightfold returned {res.status_code}")
-            return jobs
+        res.raise_for_status()
             
         data = res.json()
         positions = data.get("data", {}).get("positions", [])
@@ -36,6 +34,8 @@ async def fetch_eightfold(client: httpx.AsyncClient, company_name: str, domain: 
                 "date_fetched": datetime.now(timezone.utc).isoformat()
             })
     except Exception as e:
+        # Raised, not swallowed: the pipeline marks the company failed instead of "listed nothing".
         print(f"[{company_name}] Error fetching Eightfold: {e}")
-        
+        raise
+
     return jobs

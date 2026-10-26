@@ -34,8 +34,10 @@ async def _fetch_page(client: httpx.AsyncClient, offset: int) -> tuple[list[dict
             logger.warning("[Amazon] offset %d attempt %d failed: %s", offset, attempt + 1, e)
             await asyncio.sleep(2 ** attempt)
 
+    # Raised, not an empty page: an empty page ends the paging, the run counts as complete, and
+    # every Amazon job after this offset would be marked closed.
     logger.error("[Amazon] all %d retries exhausted at offset %d", MAX_RETRIES, offset)
-    return [], 0
+    raise RuntimeError(f"Amazon jobs API failed {MAX_RETRIES} times at offset {offset}")
 
 
 def _normalise(job: dict) -> dict:

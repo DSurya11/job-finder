@@ -25,8 +25,10 @@ async def fetch_swiggy_jobs(client: httpx.AsyncClient, company_info: dict) -> li
         response.raise_for_status()
         data = response.json()
     except Exception as e:
+        # Raised, not swallowed: the pipeline then marks Swiggy failed with the reason (since
+        # 2026-10 its careers host answers 402 Payment Required) instead of "listed nothing".
         logger.error(f"[Swiggy] failed: {e}")
-        return []
+        raise
 
     jobs = []
     items = data.get("reqDetailsBOList", [])
